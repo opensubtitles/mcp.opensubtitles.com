@@ -112,9 +112,59 @@ npx @michaellatman/mcp-get@latest install @opensubtitles/mcp-server  # Via mcp-g
 
 ## Development Notes
 
-- This is currently an empty project with just package.json
-- The mcp-prompt.txt file contains the complete project specification
-- No source code has been implemented yet
+- Complete TypeScript MCP server implementation with 3 tools
 - Kong gateway handles all rate limiting and API management
 - Use MCP Inspector for debugging (stdio communication)
 - Follow security best practices for API key handling
+- Supports both HTTP mode (port 1620) and stdio mode for Claude Desktop
+
+## Publishing to NPM
+
+To publish this package to NPM registry so users can use `npx @opensubtitles/mcp-server`:
+
+### Prerequisites
+1. Ensure you have NPM account with access to @opensubtitles organization
+2. Login to NPM: `npm login`
+3. Verify build works: `npm run build`
+
+### Publishing Steps
+```bash
+# Ensure clean build
+npm run build
+
+# Test package locally
+npm pack
+tar -tf opensubtitles-mcp-server-1.0.0.tgz
+
+# Publish to NPM
+npm publish
+
+# Verify publication
+npm view @opensubtitles/mcp-server
+```
+
+### After Publishing
+Users can then use:
+```bash
+npx @opensubtitles/mcp-server
+```
+
+And Claude Desktop config becomes:
+```json
+{
+  "mcpServers": {
+    "opensubtitles": {
+      "command": "npx",
+      "args": ["-y", "@opensubtitles/mcp-server"],
+      "env": {
+        "MCP_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Current Status
+- Package is ready for publication
+- Currently users must install from GitHub: `npx https://github.com/opensubtitles/mcp.opensubtitles.com.git`
+- HTTP server available at: https://mcp.opensubtitles.com
