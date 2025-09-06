@@ -67,8 +67,10 @@ function readChunk(filePath: string, start: number, length: number): Promise<Buf
     const chunks: Buffer[] = [];
     const stream = createReadStream(filePath, { start, end: start + length - 1 });
     
-    stream.on('data', (chunk: Buffer) => {
-      chunks.push(chunk);
+    stream.on('data', (chunk: string | Buffer) => {
+      // Ensure chunk is a Buffer
+      const bufferChunk = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      chunks.push(bufferChunk);
     });
     
     stream.on('end', () => {
