@@ -4,15 +4,17 @@
 
 set -e
 
-# Clone or update repository
-if [ -d "mcp.opensubtitles.com" ]; then
+# Check if we're in a git repository
+if [ -d ".git" ]; then
     echo "Updating existing repository..."
-    cd mcp.opensubtitles.com
     git pull origin master
 else
-    echo "Cloning repository..."
-    git clone https://github.com/opensubtitles/mcp.opensubtitles.com.git
-    cd mcp.opensubtitles.com
+    echo "Initializing repository in current directory..."
+    git init
+    git remote add origin https://github.com/opensubtitles/mcp.opensubtitles.com.git
+    git fetch origin
+    git checkout -b master
+    git reset --hard origin/master
 fi
 
 # Install dependencies and build
