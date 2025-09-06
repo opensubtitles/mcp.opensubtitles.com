@@ -1,0 +1,10 @@
+src/
+node_modules/
+*.log
+.DS_Store
+.env*
+tsconfig.json
+build.js
+evals/
+mcp-prompt.txt
+CLAUDE.md
