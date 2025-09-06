@@ -136,28 +136,36 @@ export function createOpenSubtitlesServer(): OpenSubtitlesServer {
 
   return {
     async getTools(): Promise<Tool[]> {
+      console.error("DEBUG: getTools() called, returning", tools.length, "tools");
       return tools;
     },
 
     async handleToolCall(params: CallToolRequest["params"]): Promise<any> {
+      console.error("DEBUG: handleToolCall called with:", JSON.stringify(params, null, 2));
       const { name, arguments: args } = params;
 
       try {
+        console.error(`DEBUG: Executing tool ${name} with args:`, JSON.stringify(args, null, 2));
+        
         switch (name) {
           case "search_subtitles":
+            console.error("DEBUG: Calling searchSubtitles");
             return await searchSubtitles(args);
           
           case "download_subtitle":
+            console.error("DEBUG: Calling downloadSubtitle");
             return await downloadSubtitle(args);
           
           case "calculate_file_hash":
+            console.error("DEBUG: Calling calculateFileHash");
             return await calculateFileHash(args);
           
           default:
+            console.error(`DEBUG: Unknown tool: ${name}`);
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
-        console.error(`Error executing tool ${name}:`, error);
+        console.error(`DEBUG: Error executing tool ${name}:`, error);
         return {
           content: [
             {

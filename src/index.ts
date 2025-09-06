@@ -10,6 +10,8 @@ import express from "express";
 import cors from "cors";
 
 async function createMCPServer() {
+  console.error("DEBUG: Creating MCP server");
+  
   const server = new Server(
     {
       name: "opensubtitles-mcp-server",
@@ -22,21 +24,27 @@ async function createMCPServer() {
     }
   );
 
+  console.error("DEBUG: Server instance created");
+
   // Create and setup the OpenSubtitles server
   const openSubtitlesServer = createOpenSubtitlesServer();
+  console.error("DEBUG: OpenSubtitles server created");
   
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: await openSubtitlesServer.getTools(),
-    };
+    console.error("DEBUG: ListTools request received");
+    const tools = await openSubtitlesServer.getTools();
+    console.error("DEBUG: Returning tools:", tools.map(t => t.name));
+    return { tools };
   });
 
   // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    console.error("DEBUG: CallTool request received");
     return await openSubtitlesServer.handleToolCall(request.params);
   });
 
+  console.error("DEBUG: Request handlers set up");
   return server;
 }
 
