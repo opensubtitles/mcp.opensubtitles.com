@@ -33,15 +33,25 @@ async function createMCPServer() {
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     console.error("DEBUG: ListTools request received");
-    const tools = await openSubtitlesServer.getTools();
-    console.error("DEBUG: Returning tools:", tools.map(t => t.name));
-    return { tools };
+    try {
+      const tools = await openSubtitlesServer.getTools();
+      console.error("DEBUG: Returning tools:", tools.map(t => t.name));
+      return { tools };
+    } catch (error) {
+      console.error("DEBUG: Error in ListTools handler:", error);
+      throw error;
+    }
   });
 
   // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     console.error("DEBUG: CallTool request received");
-    return await openSubtitlesServer.handleToolCall(request.params);
+    try {
+      return await openSubtitlesServer.handleToolCall(request.params);
+    } catch (error) {
+      console.error("DEBUG: Error in CallTool handler:", error);
+      throw error;
+    }
   });
 
   console.error("DEBUG: Request handlers set up");
