@@ -10,7 +10,11 @@ export interface OpenSubtitlesServer {
 }
 
 export function createOpenSubtitlesServer(): OpenSubtitlesServer {
-  const tools: Tool[] = [
+  console.error("DEBUG: Creating OpenSubtitles server - defining tools");
+  
+  let tools: Tool[];
+  try {
+    tools = [
     {
       name: "search_subtitles",
       description: "Search for subtitles using OpenSubtitles API with comprehensive parameter support",
@@ -132,8 +136,14 @@ export function createOpenSubtitlesServer(): OpenSubtitlesServer {
         additionalProperties: false
       }
     }
-  ];
+    ];
+    console.error("DEBUG: Tools array created successfully, length:", tools.length);
+  } catch (error) {
+    console.error("DEBUG: Error creating tools array:", error);
+    tools = [];
+  }
 
+  console.error("DEBUG: About to return server object");
   return {
     async getTools(): Promise<Tool[]> {
       console.error("DEBUG: getTools() called, returning", tools.length, "tools");
