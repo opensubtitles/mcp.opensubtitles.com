@@ -6,9 +6,15 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 console.error("SIMPLE: Starting simple MCP server");
+console.error("SIMPLE: Process args:", process.argv);
+console.error("SIMPLE: Working directory:", process.cwd());
+console.error("SIMPLE: Node version:", process.version);
 
 async function main() {
-  console.error("SIMPLE: Creating server");
+  console.error("SIMPLE: Entered main function");
+  
+  try {
+    console.error("SIMPLE: Creating server");
   
   const server = new Server(
     {
@@ -91,6 +97,10 @@ async function main() {
   });
   
   console.error("SIMPLE: Keep-alive mechanisms set up");
+  } catch (error) {
+    console.error("SIMPLE: Error in main function:", error);
+    throw error;
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
