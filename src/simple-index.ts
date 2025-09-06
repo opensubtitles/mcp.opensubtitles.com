@@ -5,10 +5,15 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-console.error("SIMPLE: Starting simple MCP server");
-console.error("SIMPLE: Process args:", process.argv);
-console.error("SIMPLE: Working directory:", process.cwd());
-console.error("SIMPLE: Node version:", process.version);
+const SERVER_VERSION = "v2.1.0-debug-fixed";
+
+console.error("=".repeat(60));
+console.error(`SIMPLE-${SERVER_VERSION}: Starting simple MCP server`);
+console.error(`SIMPLE-${SERVER_VERSION}: Process args:`, process.argv);
+console.error(`SIMPLE-${SERVER_VERSION}: Working directory:`, process.cwd());
+console.error(`SIMPLE-${SERVER_VERSION}: Node version:`, process.version);
+console.error(`SIMPLE-${SERVER_VERSION}: Timestamp:`, new Date().toISOString());
+console.error("=".repeat(60));
 
 async function main() {
   console.error("SIMPLE: Entered main function");
@@ -103,13 +108,15 @@ async function main() {
   }
 }
 
-console.error("SIMPLE: Checking entry point condition...");
-console.error("SIMPLE: import.meta.url:", import.meta.url);
-console.error("SIMPLE: process.argv[1]:", process.argv[1]);
-console.error("SIMPLE: file:// + process.argv[1]:", `file://${process.argv[1]}`);
+console.error("=".repeat(60));
+console.error(`SIMPLE-${SERVER_VERSION}: Checking entry point condition...`);
+console.error(`SIMPLE-${SERVER_VERSION}: import.meta.url:`, import.meta.url);
+console.error(`SIMPLE-${SERVER_VERSION}: process.argv[1]:`, process.argv[1]);
+console.error(`SIMPLE-${SERVER_VERSION}: file:// + process.argv[1]:`, `file://${process.argv[1]}`);
 
 // Always call main - don't rely on ES module entry point check
-console.error("SIMPLE: Starting main function regardless of entry point check");
+console.error(`SIMPLE-${SERVER_VERSION}: Starting main function regardless of entry point check`);
+console.error("=".repeat(60));
 main().catch((error) => {
   console.error("SIMPLE: Error:", error);
   process.exit(1);
