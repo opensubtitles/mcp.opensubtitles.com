@@ -92,6 +92,14 @@ export function createOpenSubtitlesServer(): OpenSubtitlesServer {
           order_direction: {
             type: "string",
             description: "Sort direction (asc, desc)"
+          },
+          username: {
+            type: "string",
+            description: "OpenSubtitles.com username for authentication"
+          },
+          password: {
+            type: "string",
+            description: "OpenSubtitles.com password for authentication"
           }
         },
         additionalProperties: false
@@ -99,25 +107,52 @@ export function createOpenSubtitlesServer(): OpenSubtitlesServer {
     },
     {
       name: "download_subtitle",
-      description: "Download subtitle content by ID with format selection",
+      description: "Download subtitle content by file ID with format selection. Requires authentication (API key or username/password).",
       inputSchema: {
         type: "object",
         properties: {
-          subtitle_id: {
-            type: "string",
-            description: "Subtitle ID from search results"
+          file_id: {
+            type: "number",
+            description: "File ID from search results (found in files array of subtitle results)"
           },
-          format: {
+          sub_format: {
             type: "string",
-            enum: ["srt", "ass", "vtt"],
-            description: "Subtitle format (srt, ass, vtt)"
+            description: "Subtitle format (from /infos/formats endpoint, e.g. srt, ass, vtt)"
+          },
+          file_name: {
+            type: "string",
+            description: "Desired file name for the downloaded subtitle"
+          },
+          in_fps: {
+            type: "number",
+            description: "Input FPS for subtitle conversion (must use with out_fps)"
+          },
+          out_fps: {
+            type: "number", 
+            description: "Output FPS for subtitle conversion (must use with in_fps)"
+          },
+          timeshift: {
+            type: "number",
+            description: "Time shift in seconds to add/remove (e.g. 2.5 or -1)"
+          },
+          force_download: {
+            type: "boolean",
+            description: "Set subtitle file headers to force download"
           },
           user_api_key: {
             type: "string",
-            description: "Optional user API key for authenticated downloads"
+            description: "Your OpenSubtitles API key for authenticated downloads"
+          },
+          username: {
+            type: "string",
+            description: "OpenSubtitles.com username (alternative to API key)"
+          },
+          password: {
+            type: "string",
+            description: "OpenSubtitles.com password (use with username)"
           }
         },
-        required: ["subtitle_id"],
+        required: ["file_id"],
         additionalProperties: false
       }
     },

@@ -30,12 +30,20 @@ async function createMCPServer() {
   const openSubtitlesServer = createOpenSubtitlesServer();
   console.error("DEBUG: OpenSubtitles server created");
   
+  const isTestMode = process.env.MCP_TEST_MODE === 'true';
+  
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     console.error("DEBUG: ListTools request received");
     try {
       const tools = await openSubtitlesServer.getTools();
       console.error("DEBUG: Returning tools:", tools.map(t => t.name));
+      
+      if (isTestMode) {
+        console.error("DEBUG: Test mode - exiting after ListTools");
+        setTimeout(() => process.exit(0), 100);
+      }
+      
       return { tools };
     } catch (error) {
       console.error("DEBUG: Error in ListTools handler:", error);
@@ -47,7 +55,14 @@ async function createMCPServer() {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     console.error("DEBUG: CallTool request received");
     try {
-      return await openSubtitlesServer.handleToolCall(request.params);
+      const result = await openSubtitlesServer.handleToolCall(request.params);
+      
+      if (isTestMode) {
+        console.error("DEBUG: Test mode - exiting after CallTool");
+        setTimeout(() => process.exit(0), 100);
+      }
+      
+      return result;
     } catch (error) {
       console.error("DEBUG: Error in CallTool handler:", error);
       throw error;
@@ -126,10 +141,13 @@ async function main() {
   console.error("MAIN: Starting main function");
   console.error("MAIN: Process args:", process.argv);
   console.error("MAIN: Environment MCP_MODE:", process.env.MCP_MODE);
+  console.error("MAIN: Environment MCP_TEST_MODE:", process.env.MCP_TEST_MODE);
   console.error("MAIN: stdin.isTTY:", process.stdin.isTTY);
   
   const mode = process.env.MCP_MODE || (process.stdin.isTTY ? 'http' : 'stdio');
+  const isTestMode = process.env.MCP_TEST_MODE === 'true';
   console.error("MAIN: Selected mode:", mode);
+  console.error("MAIN: Test mode:", isTestMode);
   
   if (mode === 'http') {
     console.error("MAIN: Running HTTP mode");
@@ -138,12 +156,40 @@ async function main() {
     console.error("MAIN: Running STDIO mode");
     await runStdioMode();
   }
+  
+  // Keep the process alive with multiple approaches for stdio mode
+  if (mode === 'stdio') {
+    console.error("MAIN: Setting up keep-alive mechanisms for stdio mode");
+    
+    // Signal handlers
+    process.on('SIGINT', () => {
+      console.error("MAIN: Received SIGINT, shutting down gracefully");
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      console.error("MAIN: Received SIGTERM, shutting down gracefully");  
+      process.exit(0);
+    });
+    
+    // Prevent event loop from exiting
+    const keepAlive = setInterval(() => {
+      // Do nothing, just keep event loop alive
+    }, 60000); // Every minute
+    
+    // Explicitly keep process running
+    process.on('beforeExit', (code) => {
+      console.error("MAIN: Process about to exit with code:", code);
+      console.error("MAIN: Keeping process alive");
+    });
+    
+    console.error("MAIN: Keep-alive mechanisms set up");
+  }
 }
 
-// ES module equivalent of require.main === module
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error("Server error:", error);
-    process.exit(1);
-  });
-}
+// Always call main - don't rely on ES module entry point check
+console.error("OPENSUBTITLES-MCP: Starting main function regardless of entry point check");
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});

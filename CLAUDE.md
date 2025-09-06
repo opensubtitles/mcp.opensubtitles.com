@@ -67,8 +67,10 @@ src/
 
 ### API Integration
 - Base URL: https://api.opensubtitles.com (Kong gateway)
+- VIP URL: https://vip-api.opensubtitles.com/api/v1 (for authenticated users)
 - Rate limiting: Managed by Kong (unlimited search, limited downloads)
 - Authentication: User API keys passed through Kong
+- **Official API Specification**: Use `curl https://stoplight.io/api/v1/projects/opensubtitles/opensubtitles-api/nodes/open_api.json` for complete OpenAPI 3.0.3 specification
 
 ### Business Model
 - Anonymous users: Unlimited search, 0 downloads
@@ -118,6 +120,37 @@ npx @michaellatman/mcp-get@latest install @opensubtitles/mcp-server  # Via mcp-g
 - Follow security best practices for API key handling
 - Supports both HTTP mode (port 1620) and stdio mode for Claude Desktop
 
+### API Reference and Specifications
+
+When working with the OpenSubtitles API, always refer to the official specification:
+
+```bash
+# Get complete OpenAPI 3.0.3 specification
+curl https://stoplight.io/api/v1/projects/opensubtitles/opensubtitles-api/nodes/open_api.json
+```
+
+This specification includes:
+- **Complete endpoint documentation** for all `/api/v1/*` endpoints
+- **Request/response schemas** with exact parameter names and types
+- **Authentication requirements** for both API keys and JWT tokens
+- **Rate limiting information** and quota management
+- **Error codes and responses** for proper error handling
+- **Example requests/responses** for all endpoints
+
+### Key API Endpoints Implemented
+
+1. **POST /download**: Download subtitle files by `file_id`
+   - Requires: `file_id` (from search results)
+   - Optional: `sub_format`, `file_name`, `in_fps`, `out_fps`, `timeshift`, `force_download`
+   - Authentication: Both `Api-Key` and `Authorization` headers required
+
+2. **GET /subtitles**: Search for subtitles
+   - Supports: `query`, `imdb_id`, `tmdb_id`, `parent_imdb_id`, `season_number`, `episode_number`, etc.
+   - Rate limit: Unlimited for search operations
+
+3. **POST /login**: Authenticate user to get JWT token
+   - Returns: `base_url` (may redirect to VIP server), `token`, user info
+
 ## Publishing to NPM
 
 To publish this package to NPM registry so users can use `npx @opensubtitles/mcp-server`:
@@ -165,6 +198,41 @@ And Claude Desktop config becomes:
 ```
 
 ### Current Status
-- Package is ready for publication
-- Currently users must install from GitHub: `npx https://github.com/opensubtitles/mcp.opensubtitles.com.git`
-- HTTP server available at: https://mcp.opensubtitles.com
+- ✅ Full TypeScript implementation complete
+- ✅ HTTP server mode working on port 1620 
+- ✅ stdio mode for Claude Desktop integration
+- ✅ All three tools implemented (search, download, hash)
+- ✅ Comprehensive error handling and logging
+- ✅ ES module entry point fix applied (resolves Claude Desktop crashes)
+- ✅ Keep-alive mechanisms for stable MCP connection
+- ✅ Tested and working with Claude Desktop MCP integration
+- ✅ Package ready for publication
+- 🔄 NPM publishing pending (npmjs.com temporary issues)
+- 📋 GitHub installation temporary workaround: `npx https://github.com/opensubtitles/mcp.opensubtitles.com.git`
+- 🌐 HTTP server available at: https://mcp.opensubtitles.com
+
+### Troubleshooting
+
+#### Claude Desktop Integration Issues
+If the MCP server crashes or doesn't connect properly with Claude Desktop:
+
+1. **Check logs**: Look for MCP server logs in Claude Desktop's MCP log files
+2. **ES Module Issues**: The fix has been applied - server now always calls main() instead of relying on ES module entry point detection
+3. **Process Exit**: Keep-alive mechanisms are implemented to prevent premature process exit
+4. **Debugging**: Use the simple test server at `dist/simple-index.js` for debugging basic MCP connectivity
+
+#### GitHub Installation
+Until NPM package is available:
+```json
+{
+  "mcpServers": {
+    "opensubtitles": {
+      "command": "npx",
+      "args": ["-y", "https://github.com/opensubtitles/mcp.opensubtitles.com.git"],
+      "env": {
+        "MCP_MODE": "stdio"
+      }
+    }
+  }
+}
+```

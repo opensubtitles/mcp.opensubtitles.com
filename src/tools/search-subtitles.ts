@@ -21,6 +21,8 @@ const SearchArgsSchema = z.object({
   order_by: z.string().optional(),
   order_direction: z.string().optional(),
   user_api_key: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
 });
 
 export async function searchSubtitles(args: unknown) {
@@ -28,16 +30,34 @@ export async function searchSubtitles(args: unknown) {
     // Validate input arguments
     const validatedArgs = SearchArgsSchema.parse(args);
     
-    // Extract user API key from args
-    const { user_api_key, ...searchParams } = validatedArgs;
+    // Extract authentication parameters from args
+    const { user_api_key, username, password, ...searchParams } = validatedArgs;
     
     // Create API client
     const client = new OpenSubtitlesKongClient();
     
+    // Handle authentication
+    let authValue: string | undefined = user_api_key;
+    let isToken = false;
+    
+    // If username/password provided, login to get token
+    if (username && password && !user_api_key) {
+      try {
+        const loginResponse = await client.login({ username, password });
+        authValue = loginResponse.token;
+        isToken = true;
+        console.error(`DEBUG: Successfully logged in user ${username}, got token`);
+      } catch (loginError) {
+        console.error("DEBUG: Login failed:", loginError);
+        // Continue with default API key (authValue will be undefined)
+      }
+    }
+    
     // Perform search
     const searchResults = await client.searchSubtitles(
       searchParams as SearchParams, 
-      user_api_key
+      authValue,
+      isToken
     );
 
     // Format results for MCP response
@@ -50,43 +70,43 @@ export async function searchSubtitles(args: unknown) {
         subtitle_id: subtitle.attributes.subtitle_id,
         language: subtitle.attributes.language,
         movie_info: {
-          title: subtitle.attributes.feature_details.title,
-          movie_name: subtitle.attributes.feature_details.movie_name,
-          year: subtitle.attributes.feature_details.year,
-          imdb_id: subtitle.attributes.feature_details.imdb_id,
-          tmdb_id: subtitle.attributes.feature_details.tmdb_id,
-          season_number: subtitle.attributes.feature_details.season_number,
-          episode_number: subtitle.attributes.feature_details.episode_number,
-          parent_title: subtitle.attributes.feature_details.parent_title,
-          parent_imdb_id: subtitle.attributes.feature_details.parent_imdb_id,
-          parent_tmdb_id: subtitle.attributes.feature_details.parent_tmdb_id,
+          title: subtitle.attributes.feature_details?.title || "",
+          movie_name: subtitle.attributes.feature_details?.movie_name || "",
+          year: subtitle.attributes.feature_details?.year || 0,
+          imdb_id: subtitle.attributes.feature_details?.imdb_id || 0,
+          tmdb_id: subtitle.attributes.feature_details?.tmdb_id || null,
+          season_number: subtitle.attributes.feature_details?.season_number || null,
+          episode_number: subtitle.attributes.feature_details?.episode_number || null,
+          parent_title: subtitle.attributes.feature_details?.parent_title || null,
+          parent_imdb_id: subtitle.attributes.feature_details?.parent_imdb_id || null,
+          parent_tmdb_id: subtitle.attributes.feature_details?.parent_tmdb_id || null,
         },
         quality_info: {
-          download_count: subtitle.attributes.download_count,
-          new_download_count: subtitle.attributes.new_download_count,
-          hearing_impaired: subtitle.attributes.hearing_impaired,
-          hd: subtitle.attributes.hd,
-          fps: subtitle.attributes.fps,
-          votes: subtitle.attributes.votes,
-          points: subtitle.attributes.points,
-          ratings: subtitle.attributes.ratings,
-          from_trusted: subtitle.attributes.from_trusted,
-          foreign_parts_only: subtitle.attributes.foreign_parts_only,
-          ai_translated: subtitle.attributes.ai_translated,
-          machine_translated: subtitle.attributes.machine_translated,
+          download_count: subtitle.attributes.download_count || 0,
+          new_download_count: subtitle.attributes.new_download_count || 0,
+          hearing_impaired: subtitle.attributes.hearing_impaired || false,
+          hd: subtitle.attributes.hd || false,
+          fps: subtitle.attributes.fps || null,
+          votes: subtitle.attributes.votes || 0,
+          points: subtitle.attributes.points || 0,
+          ratings: subtitle.attributes.ratings || 0,
+          from_trusted: subtitle.attributes.from_trusted || false,
+          foreign_parts_only: subtitle.attributes.foreign_parts_only || false,
+          ai_translated: subtitle.attributes.ai_translated || false,
+          machine_translated: subtitle.attributes.machine_translated || false,
         },
         upload_info: {
-          upload_date: subtitle.attributes.upload_date,
-          uploader_name: subtitle.attributes.uploader.name,
-          uploader_rank: subtitle.attributes.uploader.rank,
-          release: subtitle.attributes.release,
-          comments: subtitle.attributes.comments,
+          upload_date: subtitle.attributes.upload_date || "",
+          uploader_name: subtitle.attributes.uploader?.name || "",
+          uploader_rank: subtitle.attributes.uploader?.rank || "",
+          release: subtitle.attributes.release || "",
+          comments: subtitle.attributes.comments || "",
         },
-        files: subtitle.attributes.files.map(file => ({
+        files: (subtitle.attributes.files || []).map(file => ({
           file_id: file.file_id,
           file_name: file.file_name,
         })),
-        url: subtitle.attributes.url,
+        url: subtitle.attributes.url || "",
       }))
     };
 

@@ -1,54 +1,67 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { z } from "zod";
+import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+// Read version from package.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
+const VERSION = packageJson.version;
 
 // Zod schemas for API responses
 export const SubtitleFileSchema = z.object({
   file_id: z.number(),
   file_name: z.string(),
+  cd_number: z.number().optional(),
 });
 
 export const SubtitleAttributesSchema = z.object({
   subtitle_id: z.string(),
-  language: z.string(),
-  download_count: z.number(),
-  new_download_count: z.number(),
-  hearing_impaired: z.boolean(),
-  hd: z.boolean(),
-  fps: z.number().nullable(),
-  votes: z.number(),
-  points: z.number(),
-  ratings: z.number(),
-  from_trusted: z.boolean(),
-  foreign_parts_only: z.boolean(),
-  ai_translated: z.boolean(),
-  machine_translated: z.boolean(),
-  upload_date: z.string(),
-  release: z.string(),
-  comments: z.string(),
-  legacy_subtitle_id: z.number().nullable(),
+  language: z.string().nullable(),
+  download_count: z.number().optional().default(0),
+  new_download_count: z.number().optional().default(0),
+  hearing_impaired: z.boolean().nullable().optional().default(false),
+  hd: z.boolean().nullable().optional().default(false),
+  fps: z.number().nullable().optional(),
+  votes: z.number().optional().nullable().default(0),
+  points: z.number().optional().default(0),
+  ratings: z.number().optional().nullable().default(0),
+  from_trusted: z.boolean().nullable().optional().default(false),
+  foreign_parts_only: z.boolean().nullable().optional().default(false),
+  ai_translated: z.boolean().nullable().optional().default(false),
+  machine_translated: z.boolean().nullable().optional().default(false),
+  upload_date: z.string().optional().default(""),
+  release: z.string().optional().default(""),
+  comments: z.string().nullable().optional().default(""),
+  legacy_subtitle_id: z.number().nullable().optional(),
+  legacy_uploader_id: z.number().nullable().optional(),
+  nb_cd: z.number().optional(),
+  slug: z.string().optional(),
   uploader: z.object({
-    uploader_id: z.number().nullable(),
-    name: z.string(),
-    rank: z.string(),
-  }),
+    uploader_id: z.number().nullable().optional(),
+    name: z.string().optional().default(""),
+    rank: z.string().optional().default(""),
+  }).optional().default({ name: "", rank: "" }),
   feature_details: z.object({
-    feature_id: z.number(),
-    feature_type: z.string(),
-    year: z.number(),
-    title: z.string(),
-    movie_name: z.string(),
-    imdb_id: z.number(),
-    tmdb_id: z.number().nullable(),
-    season_number: z.number().nullable(),
-    episode_number: z.number().nullable(),
-    parent_imdb_id: z.number().nullable(),
-    parent_title: z.string().nullable(),
-    parent_tmdb_id: z.number().nullable(),
-    parent_feature_id: z.number().nullable(),
-  }),
-  url: z.string(),
-  related_links: z.array(z.any()),
-  files: z.array(SubtitleFileSchema),
+    feature_id: z.number().optional(),
+    feature_type: z.string().optional().default(""),
+    year: z.number().optional(),
+    title: z.string().optional().default(""),
+    movie_name: z.string().optional().default(""),
+    imdb_id: z.number().optional(),
+    tmdb_id: z.number().nullable().optional(),
+    season_number: z.number().nullable().optional(),
+    episode_number: z.number().nullable().optional(),
+    parent_imdb_id: z.number().nullable().optional(),
+    parent_title: z.string().nullable().optional(),
+    parent_tmdb_id: z.number().nullable().optional(),
+    parent_feature_id: z.number().nullable().optional(),
+  }).optional().default({}),
+  url: z.string().optional().default(""),
+  related_links: z.array(z.any()).optional().default([]),
+  files: z.array(SubtitleFileSchema).optional().default([]),
 });
 
 export const SubtitleSchema = z.object({
@@ -104,35 +117,86 @@ export interface SearchParams {
 export interface DownloadParams {
   file_id: number;
   sub_format?: string;
+  file_name?: string;
+  in_fps?: number;
+  out_fps?: number;
+  timeshift?: number;
+  force_download?: boolean;
+}
+
+export interface LoginParams {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: {
+    allowed_translations: number;
+    allowed_downloads: number;
+    level: string;
+    user_id: number;
+    ext_installed: boolean;
+    vip: boolean;
+  };
+  base_url: string;
+  token: string;
+  status: number;
 }
 
 export class OpenSubtitlesKongClient {
   private client: AxiosInstance;
   private baseURL: string;
+  private defaultApiKey: string = "A4grIoZ8vC7C75aE1NxShRVwbqrLMsB2";
 
   constructor(baseURL: string = "https://api.opensubtitles.com") {
     this.baseURL = baseURL;
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "MCP OpenSubtitles Server v1.0.0",
+        "User-Agent": `@opensubtitles/mcp-server v${VERSION}`,
+        "Accept": "*/*",
       },
       timeout: 30000,
+      maxRedirects: 5, // Follow up to 5 redirects
+      validateStatus: (status) => status >= 200 && status < 400, // Accept 2xx and 3xx status codes
+      paramsSerializer: {
+        serialize: (params) => {
+          // Use URLSearchParams with custom space encoding for OpenSubtitles optimization
+          const searchParams = new URLSearchParams();
+          Object.keys(params).forEach(key => {
+            if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
+              searchParams.append(key, params[key].toString());
+            }
+          });
+          // Replace %20 with + for spaces as OpenSubtitles prefers
+          return searchParams.toString().replace(/%20/g, '+');
+        }
+      },
     });
+
 
     // Request interceptor for logging
     this.client.interceptors.request.use((config) => {
+      const queryString = config.params ? new URLSearchParams(config.params).toString() : '';
+      const fullUrl = `${config.baseURL}${config.url}${queryString ? '?' + queryString : ''}`;
       console.error(`Making request to: ${config.method?.toUpperCase()} ${config.url}`);
+      console.error(`Full URL with params: ${fullUrl}`);
+      console.error(`Headers:`, JSON.stringify(config.headers, null, 2));
+      console.error(`Params:`, JSON.stringify(config.params, null, 2));
       return config;
     });
 
-    // Response interceptor for error handling
+    // Response interceptor for error handling and redirect debugging
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.error(`Response status: ${response.status} for ${response.config.url}`);
+        return response;
+      },
       (error) => {
         if (error.response) {
           console.error(`API Error: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
+          console.error(`Error URL: ${error.response.config?.url}`);
+          console.error(`Error headers:`, error.response.headers);
           
           // Handle specific Kong/OpenSubtitles error codes
           switch (error.response.status) {
@@ -143,6 +207,10 @@ export class OpenSubtitlesKongClient {
             case 401:
               throw new Error(
                 "Invalid API key. Please check your OpenSubtitles API key or get one at opensubtitles.com/api"
+              );
+            case 403:
+              throw new Error(
+                "Access forbidden. This may be due to API rate limits or invalid API key. Please check your OpenSubtitles API key or try again later."
               );
             case 503:
               throw new Error("OpenSubtitles API is temporarily unavailable. Please try again later.");
@@ -158,44 +226,111 @@ export class OpenSubtitlesKongClient {
     );
   }
 
-  async searchSubtitles(params: SearchParams, userApiKey?: string): Promise<SearchResponse> {
+  async searchSubtitles(params: SearchParams, userApiKeyOrToken?: string, isToken: boolean = false): Promise<SearchResponse> {
     const headers: Record<string, string> = {};
     
-    if (userApiKey) {
-      headers["Authorization"] = `Bearer ${userApiKey}`;
+    // Always include API key (either default or user-provided)
+    if (userApiKeyOrToken && !isToken) {
+      // User provided their own API key - use it instead of default
+      headers["Api-Key"] = userApiKeyOrToken;
     } else {
-      headers["X-Anonymous-Request"] = "true";
+      // Use default API key
+      headers["Api-Key"] = this.defaultApiKey;
+    }
+    
+    // Add Authorization header only if we have a login token
+    if (userApiKeyOrToken && isToken) {
+      headers["Authorization"] = `Bearer ${userApiKeyOrToken}`;
     }
 
-    // Clean up params - remove undefined values
+    // Clean up params - remove undefined values and add nocache for testing
     const cleanParams = Object.entries(params)
       .filter(([_, value]) => value !== undefined && value !== null && value !== "")
-      .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+      .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {} as Record<string, any>);
+    
+    // Add nocache=1 for testing purposes to avoid caching
+    cleanParams.nocache = "1";
+
+    // Sort parameters alphabetically and process values for OpenSubtitles optimization
+    const sortedParams = Object.keys(cleanParams)
+      .sort()
+      .reduce((acc, key) => {
+        let value: any = cleanParams[key as keyof typeof cleanParams];
+        
+        if (typeof value === 'string') {
+          // Lowercase string values
+          value = value.toLowerCase();
+          
+          // Remove "tt" from IMDB IDs
+          if (key === 'imdb_id' && value.startsWith('tt')) {
+            value = value.slice(2);
+          }
+          
+          // Remove leading zeros from ID parameters
+          if (key.includes('_id') && /^\d+$/.test(value)) {
+            value = parseInt(value, 10).toString();
+          }
+        } else if (typeof value === 'number') {
+          // Convert number IDs to string without leading zeros
+          if (key.includes('_id')) {
+            value = value.toString();
+          }
+        }
+        
+        return { ...acc, [key]: value };
+      }, {} as Record<string, any>);
+
+    console.error("DEBUG: Using sorted params with lowercase strings:", sortedParams);
 
     const response = await this.client.get("/api/v1/subtitles", {
-      params: cleanParams,
+      params: sortedParams,
       headers,
     });
 
     return SearchResponseSchema.parse(response.data);
   }
 
-  async downloadSubtitle(params: DownloadParams, userApiKey?: string): Promise<DownloadResponse> {
+  async downloadSubtitle(params: DownloadParams, userApiKeyOrToken?: string, isToken: boolean = false): Promise<DownloadResponse> {
     const headers: Record<string, string> = {};
     
-    if (userApiKey) {
-      headers["Authorization"] = `Bearer ${userApiKey}`;
+    // Always include API key (either default or user-provided)
+    if (userApiKeyOrToken && !isToken) {
+      // User provided their own API key - use it instead of default
+      headers["Api-Key"] = userApiKeyOrToken;
     } else {
-      headers["X-Anonymous-Request"] = "true";
+      // Use default API key
+      headers["Api-Key"] = this.defaultApiKey;
     }
+    
+    // Add Authorization header only if we have a login token
+    if (userApiKeyOrToken && isToken) {
+      headers["Authorization"] = `Bearer ${userApiKeyOrToken}`;
+    }
+
+    // Build query parameters - file_id is required as query param
+    const queryParams: any = {
+      file_id: params.file_id,
+    };
+    
+    if (params.sub_format) queryParams.sub_format = params.sub_format;
+    if (params.file_name) queryParams.file_name = params.file_name;
+    if (params.in_fps !== undefined) queryParams.in_fps = params.in_fps;
+    if (params.out_fps !== undefined) queryParams.out_fps = params.out_fps;
+    if (params.timeshift !== undefined) queryParams.timeshift = params.timeshift;
+    if (params.force_download !== undefined) queryParams.force_download = params.force_download;
 
     const response = await this.client.post(
       "/api/v1/download",
-      {
-        file_id: params.file_id,
-        sub_format: params.sub_format || "srt",
-      },
-      { headers }
+      {}, // Empty body
+      { 
+        params: queryParams,
+        headers: {
+          ...headers,
+          "User-Agent": `@opensubtitles/mcp-server v${VERSION}`,
+          // Remove Content-Type for download requests since there's no body
+          "Content-Type": undefined,
+        }
+      }
     );
 
     return DownloadResponseSchema.parse(response.data);
@@ -205,6 +340,21 @@ export class OpenSubtitlesKongClient {
     const response = await axios.get(downloadUrl, {
       responseType: "text",
       timeout: 30000,
+    });
+
+    return response.data;
+  }
+
+  // Login with username and password to get a token
+  async login(params: LoginParams): Promise<LoginResponse> {
+    // Login endpoint should also include the API key
+    const response = await this.client.post("/api/v1/login", {
+      username: params.username,
+      password: params.password,
+    }, {
+      headers: {
+        "Api-Key": this.defaultApiKey,
+      }
     });
 
     return response.data;

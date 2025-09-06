@@ -1,6 +1,6 @@
 {
   "name": "@opensubtitles/mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for OpenSubtitles API integration",
   "main": "dist/index.js",
   "bin": {
@@ -16,28 +16,38 @@
     "test": "npm run build && npm run test:evals",
     "test:evals": "npx mcp-eval evals/evals.ts dist/index.js",
     "inspector": "npm run build && npx @modelcontextprotocol/inspector dist/index.js",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "postinstall": "npm run build"
   },
-  "keywords": ["mcp", "subtitles", "opensubtitles", "claude"],
+  "keywords": [
+    "mcp",
+    "subtitles",
+    "opensubtitles",
+    "claude"
+  ],
   "author": "OpenSubtitles",
   "license": "MIT",
   "type": "module",
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.5",
-    "axios": "^1.7.9",
-    "zod": "^3.23.8",
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "cors": "^2.8.5"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
-    "@types/express": "^5.0.0",
-    "@types/cors": "^2.8.17",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.18.1",
     "typescript": "^5.7.3"
   },
   "engines": {

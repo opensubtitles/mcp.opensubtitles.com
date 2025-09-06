@@ -2,9 +2,16 @@ import { z } from "zod";
 import { OpenSubtitlesKongClient } from "../api-client.js";
 
 const DownloadArgsSchema = z.object({
-  subtitle_id: z.string(),
-  format: z.enum(["srt", "ass", "vtt"]).optional().default("srt"),
+  file_id: z.number(),
+  sub_format: z.string().optional(),
+  file_name: z.string().optional(),
+  in_fps: z.number().optional(),
+  out_fps: z.number().optional(),
+  timeshift: z.number().optional(),
+  force_download: z.boolean().optional(),
   user_api_key: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
 });
 
 export async function downloadSubtitle(args: unknown) {
@@ -12,35 +19,46 @@ export async function downloadSubtitle(args: unknown) {
     // Validate input arguments
     const validatedArgs = DownloadArgsSchema.parse(args);
     
+    // Extract authentication parameters from args
+    const { user_api_key, username, password, file_id, sub_format, file_name, in_fps, out_fps, timeshift, force_download } = validatedArgs;
+    
     // Create API client
     const client = new OpenSubtitlesKongClient();
     
-    // First, we need to get the file_id from the subtitle_id
-    // This requires searching for the subtitle first to get the file details
-    const searchResults = await client.searchSubtitles(
-      { query: "", languages: "en" }, // Minimal search to get structure
-      validatedArgs.user_api_key
-    );
+    // Handle authentication
+    let authValue: string | undefined = user_api_key;
+    let isToken = false;
     
-    // Find the subtitle with matching ID
-    const targetSubtitle = searchResults.data.find(
-      sub => sub.attributes.subtitle_id === validatedArgs.subtitle_id
-    );
-    
-    if (!targetSubtitle || !targetSubtitle.attributes.files.length) {
-      throw new Error(`Subtitle with ID ${validatedArgs.subtitle_id} not found or has no files`);
+    // If username/password provided, login to get token
+    if (username && password && !user_api_key) {
+      try {
+        const loginResponse = await client.login({ username, password });
+        authValue = loginResponse.token;
+        isToken = true;
+        console.error(`DEBUG: Successfully logged in user ${username}, got token`);
+      } catch (loginError) {
+        console.error("DEBUG: Login failed:", loginError);
+        // Continue with default API key (authValue will be undefined)
+      }
     }
     
-    // Use the first file (most common case)
-    const fileId = targetSubtitle.attributes.files[0].file_id;
-    
     // Request download link
+    const downloadParams: any = {
+      file_id: file_id,
+    };
+    
+    // Add optional parameters
+    if (sub_format) downloadParams.sub_format = sub_format;
+    if (file_name) downloadParams.file_name = file_name;
+    if (in_fps !== undefined) downloadParams.in_fps = in_fps;
+    if (out_fps !== undefined) downloadParams.out_fps = out_fps;
+    if (timeshift !== undefined) downloadParams.timeshift = timeshift;
+    if (force_download !== undefined) downloadParams.force_download = force_download;
+    
     const downloadInfo = await client.downloadSubtitle(
-      {
-        file_id: fileId,
-        sub_format: validatedArgs.format,
-      },
-      validatedArgs.user_api_key
+      downloadParams,
+      authValue,
+      isToken
     );
     
     // Download the actual subtitle content
@@ -48,9 +66,9 @@ export async function downloadSubtitle(args: unknown) {
     
     // Format response
     const response = {
-      subtitle_id: validatedArgs.subtitle_id,
+      file_id: file_id,
       file_name: downloadInfo.file_name,
-      format: validatedArgs.format,
+      format: sub_format,
       content: subtitleContent,
       download_info: {
         requests_used: downloadInfo.requests,
