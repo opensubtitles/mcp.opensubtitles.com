@@ -103,9 +103,14 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error("SIMPLE: Error:", error);
-    process.exit(1);
-  });
-}
+console.error("SIMPLE: Checking entry point condition...");
+console.error("SIMPLE: import.meta.url:", import.meta.url);
+console.error("SIMPLE: process.argv[1]:", process.argv[1]);
+console.error("SIMPLE: file:// + process.argv[1]:", `file://${process.argv[1]}`);
+
+// Always call main - don't rely on ES module entry point check
+console.error("SIMPLE: Starting main function regardless of entry point check");
+main().catch((error) => {
+  console.error("SIMPLE: Error:", error);
+  process.exit(1);
+});
