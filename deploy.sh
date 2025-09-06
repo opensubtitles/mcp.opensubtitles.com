@@ -24,4 +24,13 @@ npm install
 echo "Building project..."
 npm run build
 
-echo "Deployment complete! Run with: PORT=1620 node dist/index.js"
+echo "Deployment complete!"
+echo ""
+echo "Usage options:"
+echo "  HTTP Mode (Web Server):  npm start"
+echo "  Stdio Mode (Claude):     npm run start:stdio"
+echo "  Development HTTP:        npm run dev"
+echo "  Development Stdio:       npm run dev:stdio"
+echo ""
+echo "HTTP server will run on: http://localhost:1620"
+echo "Health check at:         http://localhost:1620/health"

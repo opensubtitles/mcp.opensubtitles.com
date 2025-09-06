@@ -10,22 +10,43 @@ A TypeScript/Node.js-based MCP (Model Context Protocol) server for OpenSubtitles
 - **Rate Limiting**: Integrated with Kong gateway for proper rate limiting
 - **Freemium Model**: Unlimited search, downloads limited by API key status
 
-## Installation
+## Installation & Usage
 
-### Quick Start with npx (Recommended)
+The OpenSubtitles MCP Server supports **two modes**:
 
+### 1. HTTP Mode (Recommended for Server Deployment)
+
+Run as a web server on port 1620:
+
+```bash
+# Install dependencies
+npm install
+npm run build
+
+# Start HTTP server
+npm start
+# or
+PORT=1620 MCP_MODE=http node dist/index.js
+```
+
+**Access points:**
+- **Health Check:** `http://localhost:1620/health`
+- **API Info:** `http://localhost:1620/`
+- **MCP Endpoint:** `http://localhost:1620/sse` (Server-Sent Events)
+
+### 2. Stdio Mode (For Claude Desktop)
+
+#### Quick Start with npx
 ```bash
 npx @opensubtitles/mcp-server
 ```
 
-### Install via mcp-get
-
+#### Install via mcp-get
 ```bash
 npx @michaellatman/mcp-get@latest install @opensubtitles/mcp-server
 ```
 
-### Claude Desktop Integration
-
+#### Claude Desktop Integration
 Add to your Claude Desktop configuration:
 
 ```json
@@ -35,6 +56,7 @@ Add to your Claude Desktop configuration:
       "command": "npx",
       "args": ["-y", "@opensubtitles/mcp-server"],
       "env": {
+        "MCP_MODE": "stdio",
         "OPENSUBTITLES_USER_KEY": "your_api_key_here"
       }
     }
@@ -177,18 +199,32 @@ npm install
 npm run build
 ```
 
-### Development with Auto-rebuild
+### Development Commands
 ```bash
+# HTTP Mode (Web Server)
+npm run dev                # Build and run HTTP server on port 1620
+npm start                  # Run built HTTP server
+
+# Stdio Mode (Claude Desktop)
+npm run dev:stdio          # Build and run stdio mode
+npm start:stdio            # Run built stdio mode
+
+# Development with Auto-rebuild
 npm run watch
 ```
 
 ### Testing
 ```bash
-# Run evaluation tests
-npm test
+# For HTTP mode testing
+curl http://localhost:1620/health        # Health check
+curl http://localhost:1620/             # API info
 
-# Use MCP Inspector for debugging
-npm run inspector
+# For Stdio mode testing
+npm test                   # Run evaluation tests
+npm run inspector          # Debug with MCP Inspector (stdio mode)
+
+# MCP evaluation tests
+npx mcp-eval evals/evals.ts dist/index.js
 ```
 
 ### Environment Variables
