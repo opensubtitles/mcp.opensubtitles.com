@@ -65,7 +65,10 @@ async function main() {
   await server.connect(transport);
   console.error("SIMPLE: Connected successfully");
   
-  // Keep the process alive
+  // Keep the process alive with multiple approaches
+  console.error("SIMPLE: Setting up keep-alive mechanisms");
+  
+  // Method 1: Signal handlers
   process.on('SIGINT', () => {
     console.error("SIMPLE: Received SIGINT, shutting down gracefully");
     process.exit(0);
@@ -75,6 +78,19 @@ async function main() {
     console.error("SIMPLE: Received SIGTERM, shutting down gracefully");  
     process.exit(0);
   });
+  
+  // Method 2: Prevent event loop from exiting
+  const keepAlive = setInterval(() => {
+    // Do nothing, just keep event loop alive
+  }, 60000); // Every minute
+  
+  // Method 3: Explicitly keep process running
+  process.on('beforeExit', (code) => {
+    console.error("SIMPLE: Process about to exit with code:", code);
+    console.error("SIMPLE: Keeping process alive");
+  });
+  
+  console.error("SIMPLE: Keep-alive mechanisms set up");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
