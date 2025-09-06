@@ -49,10 +49,18 @@ async function createMCPServer() {
 }
 
 async function runStdioMode() {
-  const server = await createMCPServer();
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("OpenSubtitles MCP server running on stdio");
+  console.error("STDIO MODE: Starting stdio mode");
+  try {
+    const server = await createMCPServer();
+    console.error("STDIO MODE: Server created successfully");
+    const transport = new StdioServerTransport();
+    console.error("STDIO MODE: Transport created");
+    await server.connect(transport);
+    console.error("STDIO MODE: Connected successfully - OpenSubtitles MCP server running on stdio");
+  } catch (error) {
+    console.error("STDIO MODE: Error in runStdioMode:", error);
+    process.exit(1);
+  }
 }
 
 async function runHttpMode() {
@@ -105,11 +113,19 @@ async function runHttpMode() {
 }
 
 async function main() {
+  console.error("MAIN: Starting main function");
+  console.error("MAIN: Process args:", process.argv);
+  console.error("MAIN: Environment MCP_MODE:", process.env.MCP_MODE);
+  console.error("MAIN: stdin.isTTY:", process.stdin.isTTY);
+  
   const mode = process.env.MCP_MODE || (process.stdin.isTTY ? 'http' : 'stdio');
+  console.error("MAIN: Selected mode:", mode);
   
   if (mode === 'http') {
+    console.error("MAIN: Running HTTP mode");
     await runHttpMode();
   } else {
+    console.error("MAIN: Running STDIO mode");
     await runStdioMode();
   }
 }
