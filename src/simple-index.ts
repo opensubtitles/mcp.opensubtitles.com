@@ -64,6 +64,17 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("SIMPLE: Connected successfully");
+  
+  // Keep the process alive
+  process.on('SIGINT', () => {
+    console.error("SIMPLE: Received SIGINT, shutting down gracefully");
+    process.exit(0);
+  });
+  
+  process.on('SIGTERM', () => {
+    console.error("SIMPLE: Received SIGTERM, shutting down gracefully");  
+    process.exit(0);
+  });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
