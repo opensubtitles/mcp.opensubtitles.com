@@ -81,7 +81,7 @@ src/
 ```
 OPENSUBTITLES_API_BASE=https://api.opensubtitles.com
 NODE_ENV=production
-PORT=3000
+PORT=1620
 ```
 
 ### TypeScript Configuration

@@ -24,4 +24,4 @@ npm install
 echo "Building project..."
 npm run build
 
-echo "Deployment complete! Run with: node dist/index.js"
+echo "Deployment complete! Run with: PORT=1620 node dist/index.js"

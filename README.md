@@ -195,7 +195,7 @@ npm run inspector
 ```bash
 OPENSUBTITLES_API_BASE=https://api.opensubtitles.com  # Default Kong gateway
 NODE_ENV=production
-PORT=3000
+PORT=1620
 OPENSUBTITLES_USER_KEY=your_api_key_here  # Optional
 ```
 
