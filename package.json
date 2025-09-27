@@ -1,18 +1,21 @@
 {
   "name": "@opensubtitles/mcp-server",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "MCP server for OpenSubtitles API integration",
   "main": "dist/index.js",
   "bin": {
-    "mcp-opensubtitles": "dist/index.js"
+    "mcp-opensubtitles": "dist/index.js",
+    "mcp-opensubtitles-remote": "remote-proxy.js"
   },
   "scripts": {
     "build": "tsc && node build.js",
     "watch": "tsc --watch",
     "dev": "npm run build && MCP_MODE=http PORT=1620 node dist/index.js",
     "dev:stdio": "npm run build && MCP_MODE=stdio node dist/index.js",
+    "dev:remote": "node remote-proxy.js",
     "start": "MCP_MODE=http PORT=1620 node dist/index.js",
     "start:stdio": "MCP_MODE=stdio node dist/index.js",
+    "start:remote": "node remote-proxy.js",
     "test": "npm run build && npm run test:evals",
     "test:evals": "npx mcp-eval evals/evals.ts dist/index.js",
     "inspector": "npm run build && npx @modelcontextprotocol/inspector dist/index.js",

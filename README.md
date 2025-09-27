@@ -12,7 +12,11 @@ A TypeScript/Node.js-based MCP (Model Context Protocol) server for OpenSubtitles
 
 ## Installation & Usage
 
-The OpenSubtitles MCP Server supports **two modes**:
+The OpenSubtitles MCP Server supports **three modes**:
+
+- **HTTP Mode**: Web server for n8n workflows and HTTP integrations
+- **Stdio Mode (Local)**: Run locally for Claude Desktop integration  
+- **Stdio Mode (Remote)**: Connect to hosted server at mcp.opensubtitles.com
 
 ### 1. HTTP Mode (Recommended for Server Deployment)
 
@@ -46,7 +50,7 @@ npx @opensubtitles/mcp-server
 npx @michaellatman/mcp-get@latest install @opensubtitles/mcp-server
 ```
 
-#### Claude Desktop Integration
+#### Claude Desktop Integration - Local Mode
 Add to your Claude Desktop configuration:
 
 ```json
@@ -59,6 +63,33 @@ Add to your Claude Desktop configuration:
         "MCP_MODE": "stdio",
         "OPENSUBTITLES_USER_KEY": "your_api_key_here"
       }
+    }
+  }
+}
+```
+
+#### Claude Desktop Integration - Remote Mode
+Connect to the hosted server at mcp.opensubtitles.com:
+
+```json
+{
+  "mcpServers": {
+    "opensubtitles": {
+      "command": "npx",
+      "args": ["-y", "@opensubtitles/mcp-server", "remote-proxy.js"]
+    }
+  }
+}
+```
+
+Or using the dedicated remote command:
+
+```json
+{
+  "mcpServers": {
+    "opensubtitles": {
+      "command": "npx",
+      "args": ["-y", "mcp-opensubtitles-remote"]
     }
   }
 }
