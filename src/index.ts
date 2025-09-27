@@ -8,6 +8,11 @@ import {
 import { createOpenSubtitlesServer } from "./server.js";
 import express from "express";
 import cors from "cors";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json');
+const serverVersion = packageJson.version;
 
 async function createMCPServer() {
   console.error("DEBUG: Creating MCP server");
@@ -15,7 +20,7 @@ async function createMCPServer() {
   const server = new Server(
     {
       name: "opensubtitles-mcp-server",
-      version: "1.0.0",
+      version: serverVersion,
     },
     {
       capabilities: {
@@ -102,14 +107,14 @@ async function runHttpMode() {
   
   // Health check endpoint
   app.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'opensubtitles-mcp-server', version: '1.0.0' });
+    res.json({ status: 'ok', service: 'opensubtitles-mcp-server', version: serverVersion });
   });
   
   // Info endpoint
   app.get('/', (req, res) => {
     res.json({
       name: 'OpenSubtitles MCP Server',
-      version: '1.3.0',
+      version: serverVersion,
       description: 'MCP server for OpenSubtitles API integration',
       endpoints: {
         health: '/health',
