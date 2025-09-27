@@ -98,17 +98,13 @@ export function createOpenSubtitlesServer() {
             },
             {
                 name: "download_subtitle",
-                description: "Download subtitle content by file ID with format selection. Requires authentication (API key or username/password).",
+                description: "Download subtitle content by file ID. Downloads in original format with force_download=true by default for direct file download.",
                 inputSchema: {
                     type: "object",
                     properties: {
                         file_id: {
                             type: "number",
                             description: "File ID from search results (found in files array of subtitle results)"
-                        },
-                        sub_format: {
-                            type: "string",
-                            description: "Subtitle format (from /infos/formats endpoint, e.g. srt, ass, vtt)"
                         },
                         file_name: {
                             type: "string",
@@ -128,7 +124,7 @@ export function createOpenSubtitlesServer() {
                         },
                         force_download: {
                             type: "boolean",
-                            description: "Set subtitle file headers to force download"
+                            description: "Set subtitle file headers to 'application/force-download' for direct file download (default: true)"
                         },
                         user_api_key: {
                             type: "string",

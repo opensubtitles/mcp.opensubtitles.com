@@ -3,12 +3,11 @@ import { OpenSubtitlesKongClient } from "../api-client.js";
 
 const DownloadArgsSchema = z.object({
   file_id: z.number(),
-  sub_format: z.string().optional(),
   file_name: z.string().optional(),
   in_fps: z.number().optional(),
   out_fps: z.number().optional(),
   timeshift: z.number().optional(),
-  force_download: z.boolean().optional(),
+  force_download: z.boolean().optional().default(true), // Default to true for direct file download
   user_api_key: z.string().optional(),
   username: z.string().optional(),
   password: z.string().optional(),
@@ -20,7 +19,7 @@ export async function downloadSubtitle(args: unknown) {
     const validatedArgs = DownloadArgsSchema.parse(args);
     
     // Extract authentication parameters from args
-    const { user_api_key, username, password, file_id, sub_format, file_name, in_fps, out_fps, timeshift, force_download } = validatedArgs;
+    const { user_api_key, username, password, file_id, file_name, in_fps, out_fps, timeshift, force_download } = validatedArgs;
     
     // Create API client
     const client = new OpenSubtitlesKongClient();
@@ -48,12 +47,12 @@ export async function downloadSubtitle(args: unknown) {
     };
     
     // Add optional parameters
-    if (sub_format) downloadParams.sub_format = sub_format;
     if (file_name) downloadParams.file_name = file_name;
     if (in_fps !== undefined) downloadParams.in_fps = in_fps;
     if (out_fps !== undefined) downloadParams.out_fps = out_fps;
     if (timeshift !== undefined) downloadParams.timeshift = timeshift;
-    if (force_download !== undefined) downloadParams.force_download = force_download;
+    // Always set force_download to ensure direct file download with proper headers
+    downloadParams.force_download = force_download;
     
     const downloadInfo = await client.downloadSubtitle(
       downloadParams,
@@ -68,8 +67,8 @@ export async function downloadSubtitle(args: unknown) {
     const response = {
       file_id: file_id,
       file_name: downloadInfo.file_name,
-      format: sub_format,
       content: subtitleContent,
+      force_download: force_download,
       download_info: {
         requests_used: downloadInfo.requests,
         requests_remaining: downloadInfo.remaining,

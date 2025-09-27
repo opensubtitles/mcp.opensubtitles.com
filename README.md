@@ -166,6 +166,181 @@ await mcpClient.callTool("search_subtitles", {
 });
 ```
 
+## n8n Workflow Integration
+
+The OpenSubtitles MCP Server can be integrated into n8n workflows using HTTP mode. This allows you to automate subtitle search and download operations.
+
+### 1. Start Server in HTTP Mode
+
+First, start the MCP server in HTTP mode:
+
+```bash
+# Option 1: Use npm script (recommended)
+npm start
+
+# Option 2: Direct command with custom port
+MCP_MODE=http PORT=1620 node dist/index.js
+
+# Option 3: Using environment variables
+export MCP_MODE=http
+export PORT=1620
+node dist/index.js
+```
+
+The server will be available at:
+- **Base URL**: `http://localhost:1620`
+- **Health Check**: `http://localhost:1620/health`
+- **MCP Endpoint**: `http://localhost:1620/sse`
+
+### 2. n8n HTTP Request Node Configuration
+
+#### Search Subtitles
+
+Configure an HTTP Request node in n8n:
+
+```json
+{
+  "method": "POST",
+  "url": "http://localhost:1620/sse",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "search_subtitles",
+      "arguments": {
+        "query": "The Matrix",
+        "year": 1999,
+        "languages": "en"
+      }
+    }
+  }
+}
+```
+
+#### Download Subtitle
+
+```json
+{
+  "method": "POST",
+  "url": "http://localhost:1620/sse",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "download_subtitle",
+      "arguments": {
+        "file_id": 123456,
+        "user_api_key": "{{ $env.OPENSUBTITLES_API_KEY }}"
+      }
+    }
+  }
+}
+```
+
+#### Calculate File Hash
+
+```json
+{
+  "method": "POST",
+  "url": "http://localhost:1620/sse",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "calculate_file_hash",
+      "arguments": {
+        "file_path": "/path/to/movie.mkv"
+      }
+    }
+  }
+}
+```
+
+### 3. n8n Workflow Examples
+
+#### Basic Search Workflow
+1. **HTTP Request Node**: Search for subtitles using movie title
+2. **Code Node**: Parse search results and extract file IDs
+3. **HTTP Request Node**: Download best matching subtitle
+4. **File System Node**: Save subtitle to disk
+
+#### Automated Processing Workflow
+1. **File Trigger**: Monitor folder for new movie files
+2. **HTTP Request Node**: Calculate file hash
+3. **HTTP Request Node**: Search subtitles by hash for exact match
+4. **Conditional Node**: Check if subtitles found
+5. **HTTP Request Node**: Download subtitle if found
+6. **File System Node**: Save subtitle next to movie file
+
+### 4. Environment Variables for n8n
+
+Set these environment variables in your n8n instance:
+
+```bash
+# OpenSubtitles API Key (optional but recommended)
+OPENSUBTITLES_API_KEY=your_api_key_here
+
+# MCP Server URL (if running on different host/port)
+MCP_SERVER_URL=http://localhost:1620
+```
+
+### 5. Response Format
+
+All n8n HTTP requests will receive JSON-RPC 2.0 responses:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Search results or download data..."
+      }
+    ]
+  }
+}
+```
+
+### 6. Error Handling in n8n
+
+Add error handling nodes to catch common issues:
+
+- **Rate Limit (429)**: Retry after delay or notify user to get API key
+- **Invalid API Key (401)**: Alert administrator to check API key
+- **Network Errors**: Retry mechanism or alternative endpoint
+- **File Not Found**: Skip processing or log error
+
+### 7. Production Deployment
+
+For production n8n workflows:
+
+```bash
+# Run MCP server as background service
+nohup MCP_MODE=http PORT=1620 node dist/index.js > mcp-server.log 2>&1 &
+
+# Or use PM2 for process management
+pm2 start dist/index.js --name "opensubtitles-mcp" -- --env MCP_MODE=http PORT=1620
+
+# Or use Docker
+docker run -d -p 1620:1620 -e MCP_MODE=http opensubtitles-mcp-server
+```
+
+This integration allows you to automate subtitle operations in n8n workflows, perfect for media processing pipelines, batch subtitle downloads, or automated movie library management.
+
 ## Rate Limiting & API Keys
 
 ### Anonymous Usage

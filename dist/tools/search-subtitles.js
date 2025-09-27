@@ -95,14 +95,48 @@ export async function searchSubtitles(args) {
                     file_id: file.file_id,
                     file_name: file.file_name,
                 })),
-                url: subtitle.attributes.url || "",
+                webpage_url: subtitle.attributes.url || "",
+                view_online: subtitle.attributes.url ? `${subtitle.attributes.url}` : "",
             }))
         };
+        // Create a human-readable summary with clickable links
+        const topSubtitles = formattedResults.subtitles.slice(0, 5);
+        let summaryText = `## Search Results: ${formattedResults.total_results} subtitles found\n\n`;
+        if (topSubtitles.length > 0) {
+            summaryText += `**Top ${topSubtitles.length} Results:**\n\n`;
+            topSubtitles.forEach((subtitle, index) => {
+                const title = subtitle.movie_info.title || 'Unknown Title';
+                const year = subtitle.movie_info.year ? ` (${subtitle.movie_info.year})` : '';
+                const downloads = subtitle.quality_info.download_count || 0;
+                const lang = subtitle.language || 'unknown';
+                const fps = subtitle.quality_info.fps ? ` | ${subtitle.quality_info.fps} FPS` : '';
+                const hd = subtitle.quality_info.hd ? ' | HD' : '';
+                const trusted = subtitle.quality_info.from_trusted ? ' | ✅ Trusted' : '';
+                const release = subtitle.upload_info.release ? ` | Release: ${subtitle.upload_info.release}` : '';
+                summaryText += `### ${index + 1}. ${title}${year}\n`;
+                summaryText += `- **Language:** ${lang}${fps}${hd}${trusted}\n`;
+                summaryText += `- **Downloads:** ${downloads.toLocaleString()}\n`;
+                if (release)
+                    summaryText += `- **Release:** ${subtitle.upload_info.release}\n`;
+                if (subtitle.upload_info.comments)
+                    summaryText += `- **Notes:** ${subtitle.upload_info.comments}\n`;
+                // Add clickable link
+                if (subtitle.webpage_url) {
+                    summaryText += `- **🔗 View/Download:** ${subtitle.webpage_url}\n`;
+                }
+                summaryText += '\n';
+            });
+            if (formattedResults.total_results > 5) {
+                summaryText += `*...and ${formattedResults.total_results - 5} more results*\n\n`;
+            }
+        }
+        summaryText += `---\n📊 **Page:** ${formattedResults.current_page}/${formattedResults.total_pages} | **Per page:** ${formattedResults.per_page}\n\n`;
+        summaryText += `**Raw data:**\n\`\`\`json\n${JSON.stringify(formattedResults, null, 2)}\n\`\`\``;
         return {
             content: [
                 {
                     type: "text",
-                    text: JSON.stringify(formattedResults, null, 2),
+                    text: summaryText,
                 },
             ],
         };
