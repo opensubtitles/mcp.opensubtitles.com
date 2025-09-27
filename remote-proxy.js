@@ -128,18 +128,17 @@ async function createProxyServer() {
         }
       });
 
-      // Forward the tool call to the remote server's SSE endpoint
-      const response = await axiosInstance.post(`${REMOTE_SERVER_URL}/sse`, {
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "tools/call",
-        params: request.params
+      // Forward the tool call to the remote server's /proxy endpoint
+      const response = await axiosInstance.post(`${REMOTE_SERVER_URL}/proxy`, {
+        tool: request.params.name,
+        arguments: request.params.arguments
       });
       
       console.error("DEBUG: Remote server response status:", response.status);
       
-      if (response.data && response.data.result) {
-        return response.data.result;
+      // The /proxy endpoint returns the result directly
+      if (response.data) {
+        return response.data;
       } else {
         throw new Error("Invalid response format from remote server");
       }

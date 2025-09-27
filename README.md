@@ -53,6 +53,12 @@ npx @opensubtitles/mcp-server
 npx @michaellatman/mcp-get@latest install @opensubtitles/mcp-server
 ```
 
+#### Claude Code Integration
+For `claude-code` environments, you can add the server using the `claude mcp add-json` command:
+```bash
+claude mcp add-json "opensubtitles" '{"command":"npx","args":["-y","@opensubtitles/mcp-server@latest"],"env":{"MCP_MODE":"stdio","LOG_LEVEL":"info"},"disabled":false}'
+```
+
 #### Claude Desktop Integration - Local Mode
 Add to your Claude Desktop configuration:
 
