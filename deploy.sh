@@ -39,13 +39,22 @@ npm install
 echo "Building project..."
 npm run build
 
-echo "Deployment complete!"
-echo ""
-echo "Usage options:"
-echo "  HTTP Mode (Web Server):  npm start"
-echo "  Stdio Mode (Claude):     npm run start:stdio"
-echo "  Development HTTP:        npm run dev"
-echo "  Development Stdio:       npm run dev:stdio"
-echo ""
-echo "HTTP server will run on: http://localhost:1620"
-echo "Health check at:         http://localhost:1620/health"
+echo "Restarting server..."
+
+# Find the PID of the old running server
+# The -f flag matches against the full argument list, which is more specific
+PID=$(pgrep -f 'node dist/index.js')
+
+if [ ! -z "$PID" ]; then
+    echo "Found old server process with PID: $PID. Stopping it..."
+    kill $PID
+    # Wait a moment for the process to die gracefully
+    sleep 2
+else
+    echo "No old server process found running."
+fi
+
+echo "Starting new server in the background..."
+nohup npm start &
+
+echo "Deployment complete. Server is running."
