@@ -8,7 +8,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
 
-const REMOTE_SERVER_URL = "http://mcp.opensubtitles.com:1620";
+const REMOTE_SERVER_URL = "http://mcp.opensubtitles.com";
 
 async function createProxyServer() {
   console.error("DEBUG: Creating remote proxy server");

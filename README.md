@@ -14,7 +14,7 @@ A TypeScript/Node.js-based MCP (Model Context Protocol) server for OpenSubtitles
 
 The OpenSubtitles MCP Server supports **three modes**:
 
-- **HTTP Mode**: Web server for n8n workflows and HTTP integrations
+- **HTTP Mode**: Web server for n8n workflows, browser access, and HTTP integrations
 - **Stdio Mode (Local)**: Run locally for Claude Desktop integration  
 - **Stdio Mode (Remote)**: Connect to hosted server at mcp.opensubtitles.com
 
@@ -36,6 +36,9 @@ PORT=1620 MCP_MODE=http node dist/index.js
 **Access points:**
 - **Health Check:** `http://localhost:1620/health`
 - **API Info:** `http://localhost:1620/`
+- **Web Interface:** `http://localhost:1620/web` (Browser UI - No Node.js required!)
+- **Direct API:** `http://localhost:1620/proxy` (POST requests)
+- **Tools List:** `http://localhost:1620/tools` (Schema discovery)
 - **MCP Endpoint:** `http://localhost:1620/sse` (Server-Sent Events)
 
 ### 2. Stdio Mode (For Claude Desktop)
@@ -371,6 +374,41 @@ docker run -d -p 1620:1620 -e MCP_MODE=http opensubtitles-mcp-server
 ```
 
 This integration allows you to automate subtitle operations in n8n workflows, perfect for media processing pipelines, batch subtitle downloads, or automated movie library management.
+
+## Web Browser Interface
+
+For users who don't want to install Node.js or configure MCP, we provide a **full web interface**:
+
+### Access
+- **URL**: `http://mcp.opensubtitles.com/web`
+- **Requirements**: Any modern web browser
+- **No Installation**: Works immediately without setup
+
+### Features
+- **🔍 Search Subtitles**: Search by title, year, IMDB ID, languages
+- **💾 Download Subtitles**: Download by file ID from search results
+- **🔢 Calculate Hash**: Generate OpenSubtitles hash for movie files
+- **📊 Real-time Results**: Instant feedback with formatted results
+- **🎯 User-friendly**: Clean interface with loading states and error handling
+
+### Direct HTTP API
+
+For developers and automation:
+
+```bash
+# Search subtitles
+curl -X POST http://mcp.opensubtitles.com/proxy \
+  -H "Content-Type: application/json" \
+  -d '{"tool": "search_subtitles", "arguments": {"query": "Matrix", "year": 1999}}'
+
+# Download subtitle
+curl -X POST http://mcp.opensubtitles.com/proxy \
+  -H "Content-Type: application/json" \
+  -d '{"tool": "download_subtitle", "arguments": {"file_id": 123456}}'
+
+# List available tools
+curl http://mcp.opensubtitles.com/tools
+```
 
 ## Rate Limiting & API Keys
 
