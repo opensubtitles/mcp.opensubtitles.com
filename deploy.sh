@@ -7,7 +7,22 @@ set -e
 # Check if we're in a git repository
 if [ -d ".git" ]; then
     echo "Updating existing repository..."
-    git pull origin master
+    
+    # Check for local changes
+    if ! git diff-index --quiet HEAD --; then
+        echo "Warning: Local changes detected. Stashing them..."
+        git stash push -m "Auto-stash before deployment $(date)"
+    fi
+    
+    # Fetch latest changes
+    git fetch origin
+    
+    # Force reset to match origin/master exactly
+    echo "Resetting to match origin/master..."
+    git reset --hard origin/master
+    
+    # Clean up any untracked files
+    git clean -fd
 else
     echo "Initializing repository in current directory..."
     git init
