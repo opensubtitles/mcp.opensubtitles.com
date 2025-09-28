@@ -208,7 +208,7 @@ await mcpClient.callTool("search_subtitles", {
 
 ## n8n Workflow Integration
 
-The OpenSubtitles MCP Server can be integrated into n8n workflows using HTTP mode. This allows you to automate subtitle search and download operations.
+The OpenSubtitles MCP Server has **native n8n MCP client support** for seamless workflow automation. Connect directly to the MCP server using n8n's built-in MCP client tools.
 
 ### 1. Start Server in HTTP Mode
 
@@ -230,18 +230,42 @@ node dist/index.js
 The server will be available at:
 - **Base URL**: `http://localhost:1620`
 - **Health Check**: `http://localhost:1620/health`
-- **MCP Endpoint**: `http://localhost:1620/sse`
+- **MCP Endpoint**: `http://localhost:1620/message` (Streamable HTTP)
+- **Legacy MCP**: `http://localhost:1620/sse` (Server-Sent Events)
 
-### 2. n8n HTTP Request Node Configuration
+### 2. n8n MCP Client Configuration
 
-#### Search Subtitles
+#### Using n8n Native MCP Client
 
-Configure an HTTP Request node in n8n:
+Configure the n8n MCP Client Tool node:
+
+- **Server URL**: `http://localhost:1620/message` (or your server URL)
+- **Transport**: HTTP Streamable  
+- **Protocol**: Model Context Protocol (MCP)
+
+#### Search Subtitles with MCP Client
+
+Configure the MCP Client node with these parameters:
+
+```json
+{
+  "tool": "search_subtitles",
+  "arguments": {
+    "query": "The Matrix", 
+    "year": 1999,
+    "languages": "en"
+  }
+}
+```
+
+#### Alternative: Direct HTTP Request
+
+For manual HTTP integration, use HTTP Request node:
 
 ```json
 {
   "method": "POST",
-  "url": "http://localhost:1620/sse",
+  "url": "http://localhost:1620/message",
   "headers": {
     "Content-Type": "application/json"
   },
@@ -261,49 +285,25 @@ Configure an HTTP Request node in n8n:
 }
 ```
 
-#### Download Subtitle
+#### Download Subtitle with MCP Client
 
 ```json
 {
-  "method": "POST",
-  "url": "http://localhost:1620/sse",
-  "headers": {
-    "Content-Type": "application/json"
-  },
-  "body": {
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "tools/call",
-    "params": {
-      "name": "download_subtitle",
-      "arguments": {
-        "file_id": 123456,
-        "user_api_key": "{{ $env.OPENSUBTITLES_API_KEY }}"
-      }
-    }
+  "tool": "download_subtitle",
+  "arguments": {
+    "file_id": 123456,
+    "user_api_key": "{{ $env.OPENSUBTITLES_API_KEY }}"
   }
 }
 ```
 
-#### Calculate File Hash
+#### Calculate File Hash with MCP Client
 
 ```json
 {
-  "method": "POST",
-  "url": "http://localhost:1620/sse",
-  "headers": {
-    "Content-Type": "application/json"
-  },
-  "body": {
-    "jsonrpc": "2.0",
-    "id": 3,
-    "method": "tools/call",
-    "params": {
-      "name": "calculate_file_hash",
-      "arguments": {
-        "file_path": "/path/to/movie.mkv"
-      }
-    }
+  "tool": "calculate_file_hash",
+  "arguments": {
+    "file_path": "/path/to/movie.mkv"
   }
 }
 ```
@@ -311,18 +311,24 @@ Configure an HTTP Request node in n8n:
 ### 3. n8n Workflow Examples
 
 #### Basic Search Workflow
-1. **HTTP Request Node**: Search for subtitles using movie title
+1. **MCP Client Tool**: Search for subtitles using movie title
 2. **Code Node**: Parse search results and extract file IDs
-3. **HTTP Request Node**: Download best matching subtitle
+3. **MCP Client Tool**: Download best matching subtitle
 4. **File System Node**: Save subtitle to disk
 
 #### Automated Processing Workflow
 1. **File Trigger**: Monitor folder for new movie files
-2. **HTTP Request Node**: Calculate file hash
-3. **HTTP Request Node**: Search subtitles by hash for exact match
+2. **MCP Client Tool**: Calculate file hash
+3. **MCP Client Tool**: Search subtitles by hash for exact match
 4. **Conditional Node**: Check if subtitles found
-5. **HTTP Request Node**: Download subtitle if found
+5. **MCP Client Tool**: Download subtitle if found
 6. **File System Node**: Save subtitle next to movie file
+
+#### Benefits of Native MCP Integration
+- **Auto-discovery**: Tools are automatically discovered via MCP protocol
+- **Type Safety**: Full schema validation for tool arguments
+- **Error Handling**: Proper MCP error responses
+- **Tool Documentation**: Inline help and parameter descriptions
 
 ### 4. Environment Variables for n8n
 
