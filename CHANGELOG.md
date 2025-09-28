@@ -5,6 +5,38 @@ All notable changes to the OpenSubtitles MCP Server project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-09-28
+
+### Fixed
+- **CRITICAL**: Fixed double HTTP response sending causing JSON parsing errors in n8n
+- Added `res.headersSent` guard to prevent duplicate response transmission
+- Fixed "Unexpected non-whitespace character after JSON" error in n8n MCP client
+- Enhanced User-Agent detection for n8n clients (node, n8n, langchain, mcpClientTool)
+
+### Added
+- Debug endpoint `/debug` for testing JSON response format
+- Force JSON endpoint `/json` for guaranteed plain JSON responses
+- Enhanced logging for response format debugging
+- Comprehensive n8n client compatibility detection
+
+### Technical Details
+- Double response issue: Server was sending plain JSON response + chunked response
+- Solution: Added headersSent check to prevent second response
+- All n8n clients now receive proper plain JSON without parsing errors
+
+## [1.4.8_n8n_json_fix] - 2025-09-28
+
+### Added
+- Enhanced n8n client detection patterns
+- Force JSON endpoint for debugging
+- Improved User-Agent pattern matching
+
+## [1.4.7] - 2025-09-28
+
+### Added
+- Documentation updates for n8n integration
+- Comprehensive CHANGELOG documentation
+
 ## [1.4.6_n8n_plain_json] - 2025-09-28
 
 ### Added

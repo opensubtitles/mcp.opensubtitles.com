@@ -14,11 +14,16 @@ const packageJson = require('../package.json');
 const serverVersion = packageJson.version;
 // Helper function for HTTP response (adaptive for n8n compatibility)
 function streamResponse(res, data, status = 200, forceJson = false) {
+    // Prevent double response sending
+    if (res.headersSent) {
+        console.error('STREAMABLE: Headers already sent, skipping response');
+        return;
+    }
     const userAgent = res.req?.get?.('User-Agent') || '';
-    const isN8n = userAgent.includes('node') || forceJson;
-    if (isN8n && data?.jsonrpc === '2.0' && data?.result?.tools) {
-        // For n8n, send plain JSON response for initialize with tools
-        console.error('STREAMABLE: Sending plain JSON response for n8n compatibility, status:', status);
+    const isN8n = userAgent.includes('node') || userAgent.includes('n8n') || userAgent.includes('langchain') || userAgent.includes('mcpClientTool') || forceJson;
+    if (isN8n && data?.jsonrpc === '2.0') {
+        // For n8n, always send plain JSON response for all JSON-RPC
+        console.error('STREAMABLE: Sending plain JSON response for n8n compatibility, status:', status, 'UA:', userAgent);
         res.set({
             'Content-Type': 'application/json',
             'Connection': 'keep-alive',
@@ -489,7 +494,8 @@ async function runHttpMode() {
             description: 'MCP server for OpenSubtitles API integration',
             endpoints: {
                 health: '/health',
-                message: '/message'
+                message: '/message',
+                debug: '/debug'
             },
             usage: {
                 'Claude Desktop (stdio)': 'Use stdio mode with npx @opensubtitles/mcp-server',
@@ -498,7 +504,46 @@ async function runHttpMode() {
             }
         });
     });
-    // Streamable HTTP endpoint for MCP (modern) - Direct implementation like WooCommerce
+    // Debug endpoint for testing JSON responses
+    app.get('/debug', (req, res) => {
+        const userAgent = req.get('User-Agent') || '';
+        const testData = {
+            jsonrpc: '2.0',
+            id: 999,
+            result: {
+                message: 'Debug test response',
+                userAgent: userAgent,
+                timestamp: new Date().toISOString(),
+                isN8nDetected: userAgent.includes('node') || userAgent.includes('n8n')
+            }
+        };
+        // Force plain JSON for this debug endpoint
+        streamResponse(res, testData, 200, true);
+    });
+    // Force JSON endpoint for n8n debugging
+    app.all('/json', express.raw({ type: '*/*' }), async (req, res) => {
+        try {
+            console.error('JSON: Incoming request, method:', req.method);
+            if (req.method === 'POST') {
+                console.error('JSON: Handling POST request - forcing plain JSON');
+                // Force plain JSON response
+                const backup = res.req;
+                res.req = {
+                    get: (header) => header === 'User-Agent' ? 'n8n-force-json' : undefined,
+                    headers: { 'user-agent': 'n8n-force-json' }
+                };
+                await handleJsonRpcRequest(req, res);
+                res.req = backup;
+                return;
+            }
+            res.json({ status: 'JSON endpoint active', timestamp: new Date().toISOString() });
+        }
+        catch (error) {
+            console.error('JSON: Error:', error);
+            res.status(500).json({ error: 'Internal error' });
+        }
+    });
+    // Streamable HTTP endpoint for MCP (modern) - Direct implementation like WooCommerce  
     // Use raw middleware to avoid JSON parsing interference
     app.all('/message', express.raw({ type: '*/*' }), async (req, res) => {
         try {

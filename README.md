@@ -231,6 +231,8 @@ The server will be available at:
 - **Base URL**: `http://localhost:1620`
 - **Health Check**: `http://localhost:1620/health`
 - **MCP Endpoint**: `http://localhost:1620/message` (Streamable HTTP)
+- **Force JSON**: `http://localhost:1620/json` (Plain JSON for debugging)
+- **Debug Info**: `http://localhost:1620/debug` (Server diagnostics)
 - **Legacy MCP**: `http://localhost:1620/sse` (Server-Sent Events)
 
 ### 2. n8n MCP Client Configuration
@@ -329,6 +331,17 @@ For manual HTTP integration, use HTTP Request node:
 - **Type Safety**: Full schema validation for tool arguments
 - **Error Handling**: Proper MCP error responses
 - **Tool Documentation**: Inline help and parameter descriptions
+- **JSON Compatibility**: Automatic plain JSON responses for n8n clients
+- **Debug Support**: Built-in debugging endpoints for troubleshooting
+
+#### Troubleshooting n8n Integration
+
+If you encounter JSON parsing errors:
+
+1. **Try Force JSON Endpoint**: Use `http://localhost:1620/json` instead of `/message`
+2. **Check Debug Info**: Visit `http://localhost:1620/debug` to verify server status
+3. **Verify User-Agent**: Server auto-detects n8n clients (node, n8n, langchain, mcpClientTool)
+4. **Check Logs**: Look for "Sending plain JSON response for n8n compatibility" messages
 
 ### 4. Environment Variables for n8n
 
