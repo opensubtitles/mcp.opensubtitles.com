@@ -153,8 +153,9 @@ export class OpenSubtitlesKongClient {
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
-        "User-Agent": `@opensubtitles/mcp-server v${VERSION}`,
-        "Accept": "*/*",
+        "User-Agent": `OpenSubtitles MCP Server v${VERSION} (+https://mcp.opensubtitles.com)` ,
+        "Accept": "application/json",
+        // Axios sets Content-Type automatically for JSON bodies; for GET it won't send it
       },
       timeout: 30000,
       maxRedirects: 5, // Follow up to 5 redirects
@@ -243,6 +244,11 @@ export class OpenSubtitlesKongClient {
       headers["Authorization"] = `Bearer ${userApiKeyOrToken}`;
     }
 
+    // If languages are specified, hint preferred language via Accept-Language
+    if (params.languages && typeof params.languages === 'string' && params.languages.trim().length > 0) {
+      headers["Accept-Language"] = params.languages;
+    }
+
     // Clean up params - remove undefined values and add nocache for testing
     const cleanParams = Object.entries(params)
       .filter(([_, value]) => value !== undefined && value !== null && value !== "")
@@ -326,7 +332,7 @@ export class OpenSubtitlesKongClient {
         params: queryParams,
         headers: {
           ...headers,
-          "User-Agent": `@opensubtitles/mcp-server v${VERSION}`,
+          "User-Agent": `OpenSubtitles MCP Server v${VERSION} (+https://mcp.opensubtitles.com)` ,
           // Remove Content-Type for download requests since there's no body
           "Content-Type": undefined,
         }
