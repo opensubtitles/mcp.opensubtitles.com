@@ -115,3 +115,4 @@ dist
 
 # Staging directory for npm publish
 package/
+mcp-for-woocommerce/

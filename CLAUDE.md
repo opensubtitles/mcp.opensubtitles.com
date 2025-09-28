@@ -59,10 +59,12 @@ src/
 ## Technical Details
 
 ### Dependencies
-- @modelcontextprotocol/sdk - MCP TypeScript SDK
-- axios - HTTP client for Kong gateway communication
-- zod - Schema validation and type safety
-- dotenv - Environment configuration
+- @modelcontextprotocol/sdk@1.17.5 - MCP TypeScript SDK
+- axios@1.11.0 - HTTP client for Kong gateway communication
+- zod@3.25.76 - Schema validation and type safety
+- dotenv@16.6.1 - Environment configuration
+- express@4.21.2 - HTTP server for development and debugging
+- cors@2.8.5 - CORS middleware for HTTP mode
 - crypto - File hashing (built-in Node.js)
 
 ### API Integration
@@ -87,12 +89,90 @@ PORT=1620
 ```
 
 ### TypeScript Configuration
+- Version: 5.9.2
 - Target: ES2022
 - Module: ESNext
 - Strict mode enabled
 - Output directory: dist/
 
 ## Installation and Usage
+
+### Docker Development Setup (Recommended)
+
+#### Prerequisites
+- Docker and Docker Compose installed
+- n8n and Qdrant containers (optional - included in compose)
+
+#### Quick Start
+```bash
+# Clone repository
+git clone https://github.com/opensubtitles/mcp.opensubtitles.com.git
+cd mcp.opensubtitles.com
+
+# Start all services
+docker-compose up -d
+
+# Or start only OpenSubtitles MCP server
+docker-compose up opensubtitles
+
+# View logs
+docker-compose logs -f opensubtitles
+```
+
+#### Docker Services
+- **opensubtitles**: MCP server on `http://opensubtitles:1620` ✅
+- **n8n**: Workflow automation on `http://localhost:5678` (optional)
+- **qdrant**: Vector database on `http://localhost:6333` (optional)
+- **postgres**: Database for n8n (optional)
+
+#### Development Workflow
+1. Edit source files locally in `./src/`
+2. TypeScript auto-compiles with watch mode ✅
+3. Server automatically restarts on changes ✅
+4. Test changes immediately in containers ✅
+5. Volume mapping preserves node_modules performance ✅
+
+#### Tested Endpoints
+- **Health Check**: `http://localhost:1620/health` ✅
+- **Tools List**: `http://localhost:1620/tools` ✅
+- **HTTP Proxy**: `POST http://localhost:1620/proxy` ✅
+- **Web Interface**: `http://localhost:1620/web` ✅
+- **SSE (for MCP)**: `http://localhost:1620/sse` ✅
+- **Streamable (for MCP)**: `http://localhost:1620/message` ✅
+
+#### n8n Integration
+**MCP Client Configuration (SSE - Legacy):**
+- **Endpoint**: `http://opensubtitles:1620/sse`
+- **Transport**: Server Sent Events
+- **Network**: `mcp_network` (automatic)
+
+**MCP Client Configuration (Streamable - Modern):**
+- **Endpoint**: `http://opensubtitles:1620/message`
+- **Transport**: HTTP Streamable
+- **Network**: `mcp_network` (automatic)
+
+**HTTP Tool Configuration:**
+- **URL**: `http://opensubtitles:1620/proxy`
+- **Method**: POST
+- **Content-Type**: application/json
+- **Body Example**:
+```json
+{
+  "tool": "search_subtitles",
+  "arguments": {
+    "query": "Matrix",
+    "year": 1999,
+    "languages": "en,es"
+  }
+}
+```
+
+#### Container Network Access
+All containers communicate via hostnames:
+- `opensubtitles` → OpenSubtitles MCP server
+- `n8n` → n8n workflow automation
+- `qdrant` → Vector database
+- `postgres` → PostgreSQL database
 
 ### NPM Package Usage
 ```bash
@@ -198,20 +278,55 @@ And Claude Desktop config becomes:
 ```
 
 ### Current Status
-- ✅ Full TypeScript implementation complete
-- ✅ HTTP server mode working on port 1620 
+- ✅ Full TypeScript implementation complete (v1.4.4)
+- ✅ HTTP server mode working on port 1620 with CORS support
 - ✅ stdio mode for Claude Desktop integration
 - ✅ All three tools implemented (search, download, hash)
 - ✅ Comprehensive error handling and logging
 - ✅ ES module entry point fix applied (resolves Claude Desktop crashes)
 - ✅ Keep-alive mechanisms for stable MCP connection
 - ✅ Tested and working with Claude Desktop MCP integration
+- ✅ Express/CORS dependencies added for HTTP mode
+- ✅ Updated TypeScript to v5.9.2
+- ✅ **Docker development environment fully deployed**
+- ✅ **Volume mapping for live code editing**
+- ✅ **Docker network connectivity with n8n/Qdrant**
+- ✅ **All HTTP endpoints tested and working (health, tools, proxy, sse, streamable)**
+- ✅ **Streamable HTTP transport fully implemented based on WooCommerce patterns**
+- ✅ **Direct chunked transfer encoding with proper JSON-RPC 2.0 compliance**
+- ✅ **n8n compatibility confirmed - streamable endpoint working perfectly**
+- ✅ **Manual body parsing to avoid Express.js middleware interference**
+- ✅ **Both tools/list and tools/call methods working via streamable transport**
+- ✅ **Development workflow optimized with auto-rebuild**
 - ✅ Package ready for publication
 - 🔄 NPM publishing pending (npmjs.com temporary issues)
 - 📋 GitHub installation temporary workaround: `npx https://github.com/opensubtitles/mcp.opensubtitles.com.git`
 - 🌐 HTTP server available at: https://mcp.opensubtitles.com
 
 ### Troubleshooting
+
+#### n8n Integration Issues
+If n8n reports "Could not connect to your MCP server":
+
+1. **Use simplified endpoint**: Use `http://localhost:1620/mcp` instead of `http://localhost:1620/message`
+2. **Verify User-Agent**: The server automatically detects n8n clients and provides standard JSON responses
+3. **Check connection**: Test with curl:
+   ```bash
+   curl -X POST http://localhost:1620/mcp \
+     -H "Content-Type: application/json" \
+     -H "User-Agent: n8n" \
+     -d '{"jsonrpc":"2.0","method":"tools/list","params":{},"id":1}'
+   ```
+
+#### n8n Configuration
+For n8n HTTP Streamable Authentication node:
+- **URL**: `http://localhost:1620/mcp` (use simplified endpoint)
+- **Method**: POST
+- **Authentication**: None
+- **Headers**: Content-Type: application/json
+
+#### User-Agent Compliance
+The server uses `MCPServer v{VERSION}` as User-Agent header to comply with OpenSubtitles API requirements as specified in [OpenSubtitles Best Practices](https://opensubtitles.stoplight.io/docs/opensubtitles-api/6ef2e232095c7-best-practices).
 
 #### Claude Desktop Integration Issues
 If the MCP server crashes or doesn't connect properly with Claude Desktop:

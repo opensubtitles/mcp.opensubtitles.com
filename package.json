@@ -1,6 +1,6 @@
 {
   "name": "@opensubtitles/mcp-server",
-  "version": "1.4.4",
+  "version": "1.4.6_n8n_plain_json",
   "description": "MCP server for OpenSubtitles API integration",
   "main": "dist/index.js",
   "bin": {

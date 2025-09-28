@@ -1,4 +1,4 @@
-import { Tool, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
+import { Tool, CallToolRequest, Resource, ReadResourceRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { searchSubtitles } from "./tools/search-subtitles.js";
 import { downloadSubtitle } from "./tools/download-subtitle.js";
@@ -7,6 +7,8 @@ import { calculateFileHash } from "./tools/calculate-file-hash.js";
 export interface OpenSubtitlesServer {
   getTools(): Promise<Tool[]>;
   handleToolCall(params: CallToolRequest["params"]): Promise<any>;
+  getResources(): Promise<Resource[]>;
+  readResource(params: ReadResourceRequest["params"]): Promise<any>;
 }
 
 export function createOpenSubtitlesServer(): OpenSubtitlesServer {
@@ -179,6 +181,149 @@ export function createOpenSubtitlesServer(): OpenSubtitlesServer {
     async getTools(): Promise<Tool[]> {
       console.error("DEBUG: getTools() called, returning", tools.length, "tools");
       return tools;
+    },
+
+    async getResources(): Promise<Resource[]> {
+      console.error("DEBUG: getResources() called");
+      return [
+        {
+          uri: "opensubtitles://guide/intelligent-search",
+          name: "OpenSubtitles Intelligent Search Guide",
+          description: "Universal guide for AI assistants on how to perform intelligent subtitles searches using the available tools",
+          mimeType: "text/markdown"
+        }
+      ];
+    },
+
+    async readResource(params: ReadResourceRequest["params"]): Promise<any> {
+      console.error("DEBUG: readResource called with:", JSON.stringify(params, null, 2));
+      const { uri } = params;
+
+      if (uri === "opensubtitles://guide/intelligent-search") {
+        return {
+          contents: [
+            {
+              uri: uri,
+              mimeType: "text/markdown",
+              text: `# OpenSubtitles Intelligent Search Guide
+
+## Overview
+This guide helps AI assistants perform intelligent subtitle searches using the OpenSubtitles MCP server tools. The server provides three core tools for comprehensive subtitle management.
+
+## Available Tools
+
+### 1. search_subtitles
+**Purpose**: Find subtitles using various search criteria
+**Best Practices**:
+- Start with specific criteria (IMDB ID, year) for better results
+- Use \`query\` for general text search (movie/TV show titles)
+- Combine multiple parameters for precise matching
+- Always specify \`languages\` when user has language preferences
+
+**Smart Search Strategies**:
+- **For Movies**: Use \`query + year + imdb_id\` if available
+- **For TV Shows**: Use \`parent_imdb_id + season_number + episode_number\`
+- **For Local Files**: Calculate hash first, then search with \`moviehash + moviebytesize\`
+- **Quality Control**: Use \`trusted_sources: "only"\` for verified subtitles
+
+**Parameter Combinations**:
+\`\`\`json
+// Best accuracy - IMDB + specific details
+{
+  "imdb_id": 133093,
+  "year": 1999,
+  "languages": "en"
+}
+
+// TV Series episode
+{
+  "parent_imdb_id": 944947,
+  "season_number": 1,
+  "episode_number": 5,
+  "languages": "en,es"
+}
+
+// File-based matching (most accurate)
+{
+  "moviehash": "8e245d9679d31e12",
+  "moviebytesize": 735934464,
+  "languages": "en"
+}
+\`\`\`
+
+### 2. download_subtitle
+**Purpose**: Download subtitle files by ID
+**Requirements**: 
+- \`file_id\` from search results (found in \`files\` array)
+- Optional API key for authenticated downloads (higher rate limits)
+
+**Smart Usage**:
+- Always get \`file_id\` from search results first
+- Use \`force_download: true\` for direct file downloads
+- Apply \`timeshift\` or FPS conversion when needed
+- Provide meaningful \`file_name\` for organization
+
+### 3. calculate_file_hash
+**Purpose**: Generate OpenSubtitles hash for local movie files
+**When to Use**:
+- User has local movie file and wants exact subtitle matches
+- Before searching with moviehash parameter
+- For highest accuracy subtitle matching
+
+## Intelligent Search Workflow
+
+### Step 1: Identify Search Type
+1. **User has movie/show name**: Use \`query\` + \`year\` 
+2. **User has IMDB/TMDB ID**: Use exact ID search
+3. **User has local file**: Calculate hash first
+4. **User wants specific episode**: Use series + season/episode
+
+### Step 2: Execute Search
+- Start with most specific criteria available
+- If no results, gradually broaden search
+- Always include language preferences when specified
+
+### Step 3: Present Results Intelligently
+- Show top 3-5 most relevant results
+- Highlight download counts and ratings
+- Group by language if multiple languages found
+- Provide download links and file IDs for easy access
+
+### Step 4: Download Process
+- Use file_id from selected result
+- Apply any requested modifications (timeshift, FPS)
+- Provide clear download confirmation
+
+## Error Handling
+- **No results**: Suggest broader search terms or alternative search methods
+- **Authentication required**: Explain API key benefits for downloads
+- **File not found**: Verify file_id from latest search results
+- **Hash calculation failed**: Check file path and permissions
+
+## Language Codes
+Common language codes: \`en\` (English), \`es\` (Spanish), \`fr\` (French), \`de\` (German), \`it\` (Italian), \`pt\` (Portuguese), \`ru\` (Russian), \`ja\` (Japanese), \`zh\` (Chinese), \`ko\` (Korean)
+
+## Rate Limiting
+- Search: Unlimited for all users
+- Download: Limited for anonymous users, higher limits with API key
+- Encourage users to get free API key from OpenSubtitles.com for better experience
+
+## Tips for AI Assistants
+1. **Always ask for language preferences** if not specified
+2. **Combine search criteria** for better accuracy  
+3. **Explain search strategy** to users for transparency
+4. **Handle TV shows carefully** - distinguish between series and episodes
+5. **Suggest file hash calculation** for local files
+6. **Provide context** about subtitle quality and source
+7. **Respect rate limits** and suggest API keys when appropriate
+
+This guide enables intelligent, context-aware subtitle searches that provide the best user experience.`
+            }
+          ]
+        };
+      }
+
+      throw new Error(`Resource not found: ${uri}`);
     },
 
     async handleToolCall(params: CallToolRequest["params"]): Promise<any> {

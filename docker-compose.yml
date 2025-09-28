@@ -1,0 +1,96 @@
+# Docker Compose v2 format (version field is obsolete)
+
+services:
+  # n8n service (existing)
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=password
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+    networks:
+      - mcp_network
+
+  # PostgreSQL for n8n (if needed)
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=n8n
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8n
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mcp_network
+
+  # Qdrant vector database (existing)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - mcp_network
+
+  # OpenSubtitles MCP Server
+  opensubtitles:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opensubtitles-mcp
+    ports:
+      - "1620:1620"
+    volumes:
+      # Map local code to container for development
+      - ./src:/app/src:ro
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./build.js:/app/build.js:ro
+      # Map dist folder for compiled output (writable)
+      - ./dist:/app/dist
+      # Map node_modules as named volume for better performance
+      - opensubtitles_node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MCP_MODE=http
+      - PORT=1620
+      - LOG_LEVEL=debug
+    networks:
+      mcp_network:
+        aliases:
+          - opensubtitiles
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1620/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  n8n_data:
+  postgres_data:
+  qdrant_data:
+  opensubtitles_node_modules:
+
+networks:
+  mcp_network:
+    driver: bridge
+    name: mcp_network

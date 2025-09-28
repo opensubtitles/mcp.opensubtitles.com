@@ -1,19 +1,382 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 import { createOpenSubtitlesServer } from "./server.js";
 import express from "express";
 import cors from "cors";
+import { createRequire } from 'module';
+// Diagnostics: track recent initialize (handshake) per IP for helpful logs
+const HANDSHAKE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const lastHandshakeByIp = new Map();
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json');
+const serverVersion = packageJson.version;
+// Helper function for HTTP response (adaptive for n8n compatibility)
+function streamResponse(res, data, status = 200, forceJson = false) {
+    const userAgent = res.req?.get?.('User-Agent') || '';
+    const isN8n = userAgent.includes('node') || forceJson;
+    if (isN8n && data?.jsonrpc === '2.0' && data?.result?.tools) {
+        // For n8n, send plain JSON response for initialize with tools
+        console.error('STREAMABLE: Sending plain JSON response for n8n compatibility, status:', status);
+        res.set({
+            'Content-Type': 'application/json',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            'MCP-Protocol-Version': '2025-06-18',
+            'X-Transport-Type': 'streamable-http',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'false'
+        });
+        res.status(status).json(data);
+        return;
+    }
+    console.error('STREAMABLE: Sending streaming response (chunked), status:', status);
+    // Use chunked transfer for other clients
+    res.set({
+        'Content-Type': 'application/json',
+        'Transfer-Encoding': 'chunked',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+        'MCP-Protocol-Version': '2025-06-18',
+        'X-Transport-Type': 'streamable-http',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'false'
+    });
+    res.status(status);
+    if (data !== null) {
+        const json = JSON.stringify(data);
+        writeChunk(res, json);
+    }
+    // End the stream with empty chunk
+    writeChunk(res, '');
+}
+// Helper function to write HTTP chunks with proper encoding
+function writeChunk(res, data) {
+    const length = Buffer.byteLength(data, 'utf8');
+    res.write(length.toString(16) + '\r\n');
+    res.write(data + '\r\n');
+    if (data === '') {
+        res.end(); // End stream on empty chunk
+    }
+}
+// Helper: build JSON-RPC response for a single request (no streaming write)
+async function dispatchJsonRpcSingle(obj, req) {
+    if (!obj || obj.jsonrpc !== '2.0' || !obj.method) {
+        return { jsonrpc: '2.0', id: obj?.id ?? null, error: { code: -32600, message: 'Invalid Request' } };
+    }
+    if (obj.method === 'initialize') {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || 'unknown';
+        const ua = req.get?.('User-Agent') || '';
+        lastHandshakeByIp.set(ip, Date.now());
+        console.error(`HANDSHAKE OK: initialize from ip=${ip} ua="${ua}" ttl=${HANDSHAKE_TTL_MS}ms`);
+        const requestedProto = obj.params?.protocolVersion;
+        // Get tools for n8n compatibility - include in initialize response
+        const openSubtitlesServerForInit = createOpenSubtitlesServer();
+        const toolsForInit = await openSubtitlesServerForInit.getTools();
+        console.error('STREAMABLE: Including tools in initialize response for n8n compatibility, count:', toolsForInit.length);
+        const initResponse = {
+            jsonrpc: '2.0', id: obj.id,
+            result: {
+                protocolVersion: requestedProto || '2024-11-05',
+                capabilities: {
+                    tools: {
+                        listChanged: true,
+                        available: toolsForInit.map(t => t.name)
+                    },
+                    resources: { subscribe: true, listChanged: true }
+                },
+                serverInfo: { name: 'opensubtitles-mcp-server', version: serverVersion },
+                // Include tools directly for n8n compatibility
+                tools: toolsForInit
+            }
+        };
+        console.error('STREAMABLE: Sending initialize response (dispatchJsonRpcSingle):', JSON.stringify(initResponse, null, 2));
+        return initResponse;
+    }
+    try {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || 'unknown';
+        const last = lastHandshakeByIp.get(ip);
+        if (!last || (Date.now() - last) > HANDSHAKE_TTL_MS) {
+            console.error(`HANDSHAKE MISSING: method=${obj.method} ip=${ip} (no initialize in last ${HANDSHAKE_TTL_MS}ms) – proceeding anyway`);
+        }
+    }
+    catch { }
+    const openSubtitlesServer = createOpenSubtitlesServer();
+    if (obj.method === 'tools/list' || obj.method === 'tools/list/all') {
+        console.error('STREAMABLE: Listing tools');
+        const tools = await openSubtitlesServer.getTools();
+        console.error('STREAMABLE: Tools retrieved, count:', tools.length, 'names:', tools.map(t => t.name));
+        return { jsonrpc: '2.0', id: obj.id, result: { tools } };
+    }
+    if (obj.method === 'tools/call') {
+        console.error('STREAMABLE: Calling tool:', obj.params?.name);
+        try {
+            const headers = req.headers || {};
+            const authHeader = (headers['authorization'] || headers['Authorization']);
+            const apiKeyHeader = (headers['api-key'] || headers['Api-Key']);
+            const incomingApiKey = apiKeyHeader || (authHeader && authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7).trim() : undefined);
+            if (incomingApiKey) {
+                obj.params = obj.params || {};
+                obj.params.arguments = obj.params.arguments || {};
+                if (!obj.params.arguments.user_api_key) {
+                    obj.params.arguments.user_api_key = incomingApiKey;
+                    console.error('STREAMABLE: Injected user_api_key from request headers');
+                }
+            }
+        }
+        catch (e) {
+            console.error('STREAMABLE: Failed to inject user_api_key from headers:', e);
+        }
+        const result = await openSubtitlesServer.handleToolCall(obj.params);
+        return { jsonrpc: '2.0', id: obj.id, result };
+    }
+    if (obj.method === 'resources/list') {
+        console.error('STREAMABLE: Listing resources');
+        const resources = await openSubtitlesServer.getResources();
+        return { jsonrpc: '2.0', id: obj.id, result: { resources } };
+    }
+    if (obj.method === 'resources/read') {
+        console.error('STREAMABLE: Reading resource:', obj.params?.uri);
+        const result = await openSubtitlesServer.readResource(obj.params);
+        return { jsonrpc: '2.0', id: obj.id, result };
+    }
+    console.error('STREAMABLE: Method not found:', obj.method);
+    return { jsonrpc: '2.0', id: obj.id ?? null, error: { code: -32601, message: `Method ${obj.method} is not supported` } };
+}
+// Handle JSON-RPC MCP requests
+async function handleJsonRpcRequest(req, res) {
+    try {
+        // Parse JSON body from raw buffer
+        let body;
+        try {
+            let rawBody;
+            if (Buffer.isBuffer(req.body)) {
+                rawBody = req.body.toString('utf8');
+            }
+            else if (typeof req.body === 'string') {
+                rawBody = req.body;
+            }
+            else if (req.body && typeof req.body === 'object') {
+                // Already parsed by Express
+                body = req.body;
+                rawBody = JSON.stringify(req.body);
+            }
+            else {
+                rawBody = '';
+            }
+            console.error('STREAMABLE: Raw body received (first 100 chars):', rawBody.substring(0, 100));
+            if (!body && rawBody) {
+                body = JSON.parse(rawBody);
+            }
+            else if (!body) {
+                throw new Error('Empty request body');
+            }
+        }
+        catch (parseError) {
+            console.error('STREAMABLE: JSON parse error:', parseError);
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: null,
+                error: {
+                    code: -32700,
+                    message: 'Parse error',
+                    data: parseError instanceof Error ? parseError.message : 'Invalid JSON'
+                }
+            }, 400);
+            return;
+        }
+        console.error('STREAMABLE: Handling JSON-RPC request:', Array.isArray(body) ? `batch(${body.length})` : body.method, 'id:', Array.isArray(body) ? 'batch' : body.id);
+        if (!Array.isArray(body)) {
+            console.error('STREAMABLE: Request details - method:', body.method, 'params:', JSON.stringify(body.params));
+        }
+        // Batch support
+        if (Array.isArray(body)) {
+            const results = [];
+            for (const item of body) {
+                const reply = await dispatchJsonRpcSingle(item, req);
+                results.push(reply);
+            }
+            streamResponse(res, results);
+            return;
+        }
+        // Validate JSON-RPC structure
+        if (!body.jsonrpc || body.jsonrpc !== '2.0' || !body.method) {
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: body.id || null,
+                error: {
+                    code: -32600,
+                    message: 'Invalid Request',
+                    data: 'Missing jsonrpc, method, or invalid format'
+                }
+            }, 400);
+            return;
+        }
+        // Handle initialization (MCP handshake)
+        if (body.method === 'initialize') {
+            const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || 'unknown';
+            const ua = req.get?.('User-Agent') || '';
+            lastHandshakeByIp.set(ip, Date.now());
+            console.error(`HANDSHAKE OK: initialize from ip=${ip} ua="${ua}" ttl=${HANDSHAKE_TTL_MS}ms`);
+            // Return the protocolVersion requested by client if provided
+            const requestedProto = body.params?.protocolVersion;
+            // Generate a temporary session id header to align with Woo MCP behavior
+            try {
+                const sid = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+                res.set({ 'Mcp-Session-Id': sid });
+            }
+            catch { }
+            // Get tools for n8n compatibility - include in initialize response
+            const openSubtitlesServerForInit = createOpenSubtitlesServer();
+            const toolsForInit = await openSubtitlesServerForInit.getTools();
+            console.error('STREAMABLE: Including tools in initialize response for n8n compatibility, count:', toolsForInit.length);
+            const initResponse = {
+                jsonrpc: '2.0',
+                id: body.id,
+                result: {
+                    protocolVersion: requestedProto || '2024-11-05',
+                    capabilities: {
+                        tools: {
+                            listChanged: true,
+                            available: toolsForInit.map(t => t.name)
+                        },
+                        resources: {
+                            subscribe: true,
+                            listChanged: true
+                        }
+                    },
+                    serverInfo: {
+                        name: 'opensubtitles-mcp-server',
+                        version: serverVersion
+                    },
+                    // Include tools directly for n8n compatibility
+                    tools: toolsForInit
+                }
+            };
+            console.error('STREAMABLE: Sending initialize response:', JSON.stringify(initResponse, null, 2));
+            streamResponse(res, initResponse);
+            return;
+        }
+        // Handle notifications (no response needed)
+        if (body.method === 'notifications/initialized') {
+            console.error('STREAMABLE: Received initialized notification');
+            // No response for notifications
+            res.status(204).end();
+            return;
+        }
+        // Create MCP server and handle request
+        const openSubtitlesServer = createOpenSubtitlesServer();
+        // Warn when no recent handshake was seen for this client
+        try {
+            const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || 'unknown';
+            const last = lastHandshakeByIp.get(ip);
+            if (!last || (Date.now() - last) > HANDSHAKE_TTL_MS) {
+                console.error(`HANDSHAKE MISSING: method=${body.method} ip=${ip} (no initialize in last ${HANDSHAKE_TTL_MS}ms) – proceeding anyway`);
+            }
+        }
+        catch (e) {
+            console.error('HANDSHAKE CHECK ERROR:', e);
+        }
+        if (body.method === 'tools/list' || body.method === 'tools/list/all') {
+            console.error('STREAMABLE: Listing tools');
+            const tools = await openSubtitlesServer.getTools();
+            console.error('STREAMABLE: Tools retrieved, count:', tools.length, 'names:', tools.map(t => t.name));
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: body.id,
+                result: { tools }
+            });
+            return;
+        }
+        if (body.method === 'tools/call') {
+            console.error('STREAMABLE: Calling tool:', body.params?.name);
+            // Propagate API key from Authorization/Api-Key headers if not provided in arguments
+            try {
+                const headers = req.headers || {};
+                const authHeader = (headers['authorization'] || headers['Authorization']);
+                const apiKeyHeader = (headers['api-key'] || headers['Api-Key']);
+                const incomingApiKey = apiKeyHeader || (authHeader && authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7).trim() : undefined);
+                if (incomingApiKey) {
+                    body.params = body.params || {};
+                    body.params.arguments = body.params.arguments || {};
+                    if (!body.params.arguments.user_api_key) {
+                        body.params.arguments.user_api_key = incomingApiKey;
+                        console.error('STREAMABLE: Injected user_api_key from request headers');
+                    }
+                }
+            }
+            catch (e) {
+                console.error('STREAMABLE: Failed to inject user_api_key from headers:', e);
+            }
+            const result = await openSubtitlesServer.handleToolCall(body.params);
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: body.id,
+                result
+            });
+            return;
+        }
+        if (body.method === 'resources/list') {
+            console.error('STREAMABLE: Listing resources');
+            const resources = await openSubtitlesServer.getResources();
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: body.id,
+                result: { resources }
+            });
+            return;
+        }
+        if (body.method === 'resources/read') {
+            console.error('STREAMABLE: Reading resource:', body.params?.uri);
+            const result = await openSubtitlesServer.readResource(body.params);
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: body.id,
+                result
+            });
+            return;
+        }
+        // Method not found
+        console.error('STREAMABLE: Method not found:', body.method);
+        streamResponse(res, {
+            jsonrpc: '2.0',
+            id: body.id,
+            error: {
+                code: -32601,
+                message: 'Method not found',
+                data: `Method ${body.method} is not supported`
+            }
+        }, 404);
+    }
+    catch (error) {
+        const ip = req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || 'unknown';
+        console.error('STREAMABLE: Error handling JSON-RPC request:', error, ` ip=${ip}`);
+        streamResponse(res, {
+            jsonrpc: '2.0',
+            id: null,
+            error: {
+                code: -32603,
+                message: 'Internal error',
+                data: error instanceof Error ? error.message : 'Unknown error'
+            }
+        }, 500);
+    }
+}
 async function createMCPServer() {
     console.error("DEBUG: Creating MCP server");
     const server = new Server({
         name: "opensubtitles-mcp-server",
-        version: "1.0.0",
+        version: serverVersion,
     }, {
         capabilities: {
-            tools: {},
+            tools: {
+                listChanged: true
+            },
+            resources: {
+                subscribe: true,
+                listChanged: true
+            },
         },
     });
     console.error("DEBUG: Server instance created");
@@ -54,6 +417,39 @@ async function createMCPServer() {
             throw error;
         }
     });
+    // List resources handler
+    server.setRequestHandler(ListResourcesRequestSchema, async () => {
+        console.error("DEBUG: ListResources request received");
+        try {
+            const resources = await openSubtitlesServer.getResources();
+            console.error("DEBUG: Returning resources:", resources.map(r => r.name));
+            if (isTestMode) {
+                console.error("DEBUG: Test mode - exiting after ListResources");
+                setTimeout(() => process.exit(0), 100);
+            }
+            return { resources };
+        }
+        catch (error) {
+            console.error("DEBUG: Error in ListResources handler:", error);
+            throw error;
+        }
+    });
+    // Read resource handler
+    server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+        console.error("DEBUG: ReadResource request received");
+        try {
+            const result = await openSubtitlesServer.readResource(request.params);
+            if (isTestMode) {
+                console.error("DEBUG: Test mode - exiting after ReadResource");
+                setTimeout(() => process.exit(0), 100);
+            }
+            return result;
+        }
+        catch (error) {
+            console.error("DEBUG: Error in ReadResource handler:", error);
+            throw error;
+        }
+    });
     console.error("DEBUG: Request handlers set up");
     return server;
 }
@@ -83,233 +479,190 @@ async function runHttpMode() {
     app.use(express.json());
     // Health check endpoint
     app.get('/health', (req, res) => {
-        res.json({ status: 'ok', service: 'opensubtitles-mcp-server', version: '1.0.0' });
+        res.json({ status: 'ok', service: 'opensubtitles-mcp-server', version: serverVersion });
     });
     // Info endpoint
     app.get('/', (req, res) => {
         res.json({
             name: 'OpenSubtitles MCP Server',
-            version: '1.3.0',
+            version: serverVersion,
             description: 'MCP server for OpenSubtitles API integration',
             endpoints: {
                 health: '/health',
-                sse: '/sse',
-                tools: '/tools',
-                proxy: '/proxy',
-                web: '/web'
+                message: '/message'
             },
             usage: {
                 'Claude Desktop (stdio)': 'Use stdio mode with npx @opensubtitles/mcp-server',
                 'Claude Desktop (remote)': 'Use remote proxy with npx mcp-opensubtitles-remote',
-                'HTTP Clients': 'Connect to /sse endpoint for Server-Sent Events transport',
-                'Web Interface': 'Use /web for browser-based access',
-                'Direct API': 'POST to /proxy with tool calls'
+                'MCP Clients (Streamable)': 'Connect to /message endpoint for Streamable HTTP transport'
             }
         });
     });
-    // Web interface endpoint
-    app.get('/web', (req, res) => {
-        res.send(`
-<!DOCTYPE html>
-<html>
-<head>
-    <title>OpenSubtitles MCP Server - Web Interface</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; margin-bottom: 10px; }
-        .subtitle { color: #666; margin-bottom: 30px; }
-        .tool-section { margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #007bff; }
-        .tool-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
-        .tool-desc { color: #666; margin-bottom: 15px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
-        input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        button:hover { background: #0056b3; }
-        .result { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #e9ecef; }
-        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
-        pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }
-        .loading { display: none; color: #007bff; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎬 OpenSubtitles MCP Server</h1>
-        <p class="subtitle">Web interface for subtitle search and download</p>
-        
-        <div class="tool-section">
-            <div class="tool-title">🔍 Search Subtitles</div>
-            <div class="tool-desc">Search for subtitles by movie title, IMDB ID, or other criteria</div>
-            <form onsubmit="callTool(event, 'search_subtitles')">
-                <div class="form-group">
-                    <label>Movie Title:</label>
-                    <input type="text" name="query" placeholder="e.g., The Matrix" />
-                </div>
-                <div class="form-group">
-                    <label>Year:</label>
-                    <input type="number" name="year" placeholder="e.g., 1999" />
-                </div>
-                <div class="form-group">
-                    <label>Languages:</label>
-                    <input type="text" name="languages" placeholder="e.g., en,es,fr" />
-                </div>
-                <div class="form-group">
-                    <label>IMDB ID:</label>
-                    <input type="number" name="imdb_id" placeholder="e.g., 133093" />
-                </div>
-                <button type="submit">Search Subtitles</button>
-                <span class="loading">Searching...</span>
-            </form>
-            <div class="result" id="search-result" style="display:none;"></div>
-        </div>
-
-        <div class="tool-section">
-            <div class="tool-title">💾 Download Subtitle</div>
-            <div class="tool-desc">Download subtitle by file ID (get file ID from search results)</div>
-            <form onsubmit="callTool(event, 'download_subtitle')">
-                <div class="form-group">
-                    <label>File ID:</label>
-                    <input type="number" name="file_id" placeholder="e.g., 123456" required />
-                </div>
-                <div class="form-group">
-                    <label>API Key (optional):</label>
-                    <input type="text" name="user_api_key" placeholder="Your OpenSubtitles API key" />
-                </div>
-                <button type="submit">Download Subtitle</button>
-                <span class="loading">Downloading...</span>
-            </form>
-            <div class="result" id="download-result" style="display:none;"></div>
-        </div>
-
-        <div class="tool-section">
-            <div class="tool-title">🔢 Calculate File Hash</div>
-            <div class="tool-desc">Calculate OpenSubtitles hash for a local movie file</div>
-            <form onsubmit="callTool(event, 'calculate_file_hash')">
-                <div class="form-group">
-                    <label>File Path:</label>
-                    <input type="text" name="file_path" placeholder="/path/to/movie.mkv" required />
-                </div>
-                <button type="submit">Calculate Hash</button>
-                <span class="loading">Calculating...</span>
-            </form>
-            <div class="result" id="hash-result" style="display:none;"></div>
-        </div>
-    </div>
-
-    <script>
-        async function callTool(event, toolName) {
-            event.preventDefault();
-            
-            const form = event.target;
-            const formData = new FormData(form);
-            const loading = form.querySelector('.loading');
-            const resultDiv = document.getElementById(toolName.replace('_', '-') + '-result');
-            
-            // Show loading
-            loading.style.display = 'inline';
-            resultDiv.style.display = 'none';
-            
-            // Build arguments object
-            const args = {};
-            for (let [key, value] of formData.entries()) {
-                if (value.trim() !== '') {
-                    // Convert numeric fields
-                    if (['year', 'imdb_id', 'tmdb_id', 'file_id', 'season_number', 'episode_number', 'moviebytesize', 'in_fps', 'out_fps', 'timeshift'].includes(key)) {
-                        args[key] = parseInt(value);
-                    } else if (key === 'force_download') {
-                        args[key] = value === 'true';
-                    } else {
-                        args[key] = value;
-                    }
-                }
-            }
-            
-            try {
-                const response = await fetch('/proxy', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        tool: toolName,
-                        arguments: args
-                    })
+    // Streamable HTTP endpoint for MCP (modern) - Direct implementation like WooCommerce
+    // Use raw middleware to avoid JSON parsing interference
+    app.all('/message', express.raw({ type: '*/*' }), async (req, res) => {
+        try {
+            console.error('STREAMABLE: Incoming request to /message endpoint, method:', req.method);
+            // Handle CORS preflight
+            if (req.method === 'OPTIONS') {
+                res.set({
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Accept, MCP-Session-Id, MCP-Protocol-Version, Authorization, Api-Key, X-Requested-With',
+                    'Access-Control-Allow-Credentials': 'false',
+                    'Access-Control-Max-Age': '86400'
                 });
-                
-                const result = await response.json();
-                
-                loading.style.display = 'none';
-                resultDiv.style.display = 'block';
-                
-                if (response.ok) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = '<pre>Error: ' + (result.error || 'Unknown error') + '</pre>';
+                res.status(204).end();
+                return;
+            }
+            // Handle GET requests - health check with streaming
+            if (req.method === 'GET') {
+                console.error('STREAMABLE: Handling GET request');
+                const userAgent = req.get('User-Agent') || '';
+                console.error('STREAMABLE: User-Agent:', userAgent);
+                streamResponse(res, {
+                    jsonrpc: '2.0',
+                    id: null,
+                    result: {
+                        status: 'ok',
+                        transport: 'streamable-http',
+                        endpoint: '/message',
+                        service: 'opensubtitles-mcp-server',
+                        version: serverVersion,
+                        headers: req.headers // Debug info
+                    }
+                });
+                return;
+            }
+            // Handle HEAD requests - allow simple connectivity checks
+            if (req.method === 'HEAD') {
+                res.set({
+                    'Access-Control-Allow-Origin': '*',
+                    'MCP-Protocol-Version': '2025-06-18',
+                    'X-Transport-Type': 'streamable-http'
+                });
+                res.status(204).end();
+                return;
+            }
+            // Handle POST requests - JSON-RPC MCP requests
+            if (req.method === 'POST') {
+                console.error('STREAMABLE: Handling POST request');
+                const userAgent = req.get('User-Agent') || '';
+                const acceptHeader = req.get('Accept') || '';
+                console.error('STREAMABLE: User-Agent:', userAgent);
+                console.error('STREAMABLE: Accept header:', acceptHeader);
+                await handleJsonRpcRequest(req, res);
+                return;
+            }
+            // Method not allowed
+            console.error('STREAMABLE: Method not allowed:', req.method);
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: null,
+                error: {
+                    code: -32601,
+                    message: `Method ${req.method} not allowed`
                 }
-            } catch (error) {
-                loading.style.display = 'none';
-                resultDiv.style.display = 'block';
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = '<pre>Network Error: ' + error.message + '</pre>';
-            }
-        }
-    </script>
-</body>
-</html>
-    `);
-    });
-    // Direct HTTP API proxy endpoint
-    app.post('/proxy', async (req, res) => {
-        try {
-            const { tool, arguments: args } = req.body;
-            if (!tool) {
-                return res.status(400).json({ error: 'Tool name is required' });
-            }
-            console.error(`HTTP Proxy: Calling tool ${tool} with args:`, JSON.stringify(args, null, 2));
-            const openSubtitlesServer = createOpenSubtitlesServer();
-            const result = await openSubtitlesServer.handleToolCall({
-                name: tool,
-                arguments: args || {}
-            });
-            console.error(`HTTP Proxy: Tool ${tool} completed successfully`);
-            res.json(result);
+            }, 405);
         }
         catch (error) {
-            console.error(`HTTP Proxy: Tool call failed:`, error);
-            res.status(500).json({
-                error: error instanceof Error ? error.message : 'Unknown error',
-                details: error instanceof Error ? error.stack : undefined
-            });
+            console.error('STREAMABLE: Error in /message endpoint:', error);
+            if (!res.headersSent) {
+                streamResponse(res, {
+                    jsonrpc: '2.0',
+                    id: null,
+                    error: {
+                        code: -32603,
+                        message: 'Internal error',
+                        data: error instanceof Error ? error.message : 'Unknown error'
+                    }
+                }, 500);
+            }
         }
     });
-    // List available tools
-    app.get('/tools', async (req, res) => {
+    // Alias route to match Woo MCP endpoint shape for compatibility with clients
+    app.all('/wp-json/wp/v2/wpmcp/streamable', express.raw({ type: '*/*' }), async (req, res) => {
         try {
-            const openSubtitlesServer = createOpenSubtitlesServer();
-            const tools = await openSubtitlesServer.getTools();
-            res.json({ tools });
+            console.error('STREAMABLE (alias): Incoming request to /wp-json/wp/v2/wpmcp/streamable, method:', req.method);
+            // CORS preflight
+            if (req.method === 'OPTIONS') {
+                res.set({
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Accept, MCP-Session-Id, MCP-Protocol-Version, Authorization, Api-Key, X-Requested-With',
+                    'Access-Control-Allow-Credentials': 'false',
+                    'Access-Control-Max-Age': '86400'
+                });
+                res.status(204).end();
+                return;
+            }
+            // Health-check style GET
+            if (req.method === 'GET') {
+                const ua = req.get('User-Agent') || '';
+                console.error('STREAMABLE (alias): Handling GET; UA:', ua);
+                streamResponse(res, {
+                    jsonrpc: '2.0',
+                    id: null,
+                    result: {
+                        status: 'ok',
+                        transport: 'streamable-http',
+                        endpoint: '/wp-json/wp/v2/wpmcp/streamable',
+                        service: 'opensubtitles-mcp-server',
+                        version: serverVersion,
+                        headers: req.headers
+                    }
+                });
+                return;
+            }
+            // HEAD probe
+            if (req.method === 'HEAD') {
+                res.set({
+                    'Access-Control-Allow-Origin': '*',
+                    'MCP-Protocol-Version': '2025-06-18',
+                    'X-Transport-Type': 'streamable-http'
+                });
+                res.status(204).end();
+                return;
+            }
+            // POST JSON-RPC
+            if (req.method === 'POST') {
+                const ua = req.get('User-Agent') || '';
+                const accept = req.get('Accept') || '';
+                console.error('STREAMABLE (alias): Handling POST; UA:', ua);
+                console.error('STREAMABLE (alias): Accept header:', accept);
+                await handleJsonRpcRequest(req, res);
+                return;
+            }
+            // Not allowed
+            console.error('STREAMABLE (alias): Method not allowed:', req.method);
+            streamResponse(res, {
+                jsonrpc: '2.0',
+                id: null,
+                error: { code: -32601, message: `Method ${req.method} not allowed` }
+            }, 405);
         }
         catch (error) {
-            console.error('Error listing tools:', error);
-            res.status(500).json({ error: 'Failed to list tools' });
+            console.error('STREAMABLE (alias): Error in endpoint:', error);
+            if (!res.headersSent) {
+                streamResponse(res, {
+                    jsonrpc: '2.0',
+                    id: null,
+                    error: {
+                        code: -32603,
+                        message: 'Internal error',
+                        data: error instanceof Error ? error.message : 'Unknown error'
+                    }
+                }, 500);
+            }
         }
-    });
-    // SSE endpoint for MCP
-    app.use('/sse', async (req, res) => {
-        const server = await createMCPServer();
-        const transport = new SSEServerTransport('/message', res);
-        await server.connect(transport);
     });
     app.listen(port, () => {
         console.log(`OpenSubtitles MCP server running on http://localhost:${port}`);
         console.log(`Health check: http://localhost:${port}/health`);
         console.log(`MCP SSE endpoint: http://localhost:${port}/sse`);
+        console.log(`MCP Streamable endpoint: http://localhost:${port}/message`);
+        console.log(`HTTP Proxy endpoint: http://localhost:${port}/proxy`);
+        console.log(`Web interface: http://localhost:${port}/web`);
     });
 }
 async function main() {
