@@ -553,6 +553,7 @@ async function runHttpMode() {
       endpoints: {
         health: '/health',
         message: '/message',
+        proxy: '/proxy',
         debug: '/debug'
       },
       usage: {
@@ -579,6 +580,45 @@ async function runHttpMode() {
     
     // Force plain JSON for this debug endpoint
     streamResponse(res, testData, 200, true);
+  });
+
+  // HTTP Proxy endpoint for direct tool calls
+  app.post('/proxy', async (req, res) => {
+    try {
+      console.error('PROXY: Incoming POST request to /proxy endpoint');
+
+      const { tool, arguments: args } = req.body;
+
+      if (!tool) {
+        return res.status(400).json({
+          error: 'Missing tool parameter',
+          usage: 'POST {"tool": "search_subtitles", "arguments": {...}}'
+        });
+      }
+
+      console.error('PROXY: Tool call:', tool, 'with args:', args);
+
+      // Create OpenSubtitles server to handle the tool call
+      const openSubtitlesServer = createOpenSubtitlesServer();
+
+      // Call the tool using the same pattern as the MCP tools/call method
+      const result = await openSubtitlesServer.handleToolCall({
+        name: tool,
+        arguments: args || {}
+      });
+
+      console.error('PROXY: Tool result:', result);
+
+      // Return the result directly as JSON
+      res.json(result);
+
+    } catch (error) {
+      console.error('PROXY: Error in /proxy endpoint:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   // Force JSON endpoint for n8n debugging
