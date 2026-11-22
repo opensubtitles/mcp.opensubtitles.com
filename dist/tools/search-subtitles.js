@@ -40,10 +40,10 @@ export async function searchSubtitles(args) {
                 const loginResponse = await client.login({ username, password });
                 authValue = loginResponse.token;
                 isToken = true;
-                console.error(`DEBUG: Successfully logged in user ${username}, got token`);
+                console.error("DEBUG: Login succeeded, got token");
             }
             catch (loginError) {
-                console.error("DEBUG: Login failed:", loginError);
+                console.error("DEBUG: Login failed:", loginError instanceof Error ? loginError.message : "unknown error");
                 // Continue with default API key (authValue will be undefined)
             }
         }
@@ -142,7 +142,7 @@ export async function searchSubtitles(args) {
         };
     }
     catch (error) {
-        console.error("Search subtitles error:", error);
+        console.error("Search subtitles error:", error instanceof Error ? error.message : "unknown error");
         let errorMessage = "Failed to search subtitles";
         if (error instanceof z.ZodError) {
             errorMessage = `Invalid parameters: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`;

@@ -11,43 +11,43 @@ const VERSION = packageJson.version;
 // Zod schemas for API responses
 export const SubtitleFileSchema = z.object({
     file_id: z.number(),
-    file_name: z.string(),
-    cd_number: z.number().optional(),
+    file_name: z.string().nullish().transform(v => v ?? ""),
+    cd_number: z.number().nullish(),
 });
 export const SubtitleAttributesSchema = z.object({
     subtitle_id: z.string(),
     language: z.string().nullable(),
-    download_count: z.number().optional().default(0),
-    new_download_count: z.number().optional().default(0),
+    download_count: z.number().nullish().transform(v => v ?? 0),
+    new_download_count: z.number().nullish().transform(v => v ?? 0),
     hearing_impaired: z.boolean().nullable().optional().default(false),
     hd: z.boolean().nullable().optional().default(false),
     fps: z.number().nullable().optional(),
     votes: z.number().optional().nullable().default(0),
-    points: z.number().optional().default(0),
+    points: z.number().nullish().transform(v => v ?? 0),
     ratings: z.number().optional().nullable().default(0),
     from_trusted: z.boolean().nullable().optional().default(false),
     foreign_parts_only: z.boolean().nullable().optional().default(false),
     ai_translated: z.boolean().nullable().optional().default(false),
     machine_translated: z.boolean().nullable().optional().default(false),
-    upload_date: z.string().optional().default(""),
-    release: z.string().optional().default(""),
+    upload_date: z.string().nullish().transform(v => v ?? ""),
+    release: z.string().nullish().transform(v => v ?? ""),
     comments: z.string().nullable().optional().default(""),
     legacy_subtitle_id: z.number().nullable().optional(),
     legacy_uploader_id: z.number().nullable().optional(),
-    nb_cd: z.number().optional(),
-    slug: z.string().optional(),
+    nb_cd: z.number().nullish(),
+    slug: z.string().nullish(),
     uploader: z.object({
         uploader_id: z.number().nullable().optional(),
-        name: z.string().optional().default(""),
-        rank: z.string().optional().default(""),
-    }).optional().default({ name: "", rank: "" }),
+        name: z.string().nullish().transform(v => v ?? ""),
+        rank: z.string().nullish().transform(v => v ?? ""),
+    }).nullish().transform(v => v ?? { name: "", rank: "" }),
     feature_details: z.object({
-        feature_id: z.number().optional(),
-        feature_type: z.string().optional().default(""),
-        year: z.number().optional(),
-        title: z.string().optional().default(""),
-        movie_name: z.string().optional().default(""),
-        imdb_id: z.number().optional(),
+        feature_id: z.number().nullish(),
+        feature_type: z.string().nullish().transform(v => v ?? ""),
+        year: z.number().nullish(),
+        title: z.string().nullish().transform(v => v ?? ""),
+        movie_name: z.string().nullish().transform(v => v ?? ""),
+        imdb_id: z.number().nullish(),
         tmdb_id: z.number().nullable().optional(),
         season_number: z.number().nullable().optional(),
         episode_number: z.number().nullable().optional(),
@@ -55,10 +55,10 @@ export const SubtitleAttributesSchema = z.object({
         parent_title: z.string().nullable().optional(),
         parent_tmdb_id: z.number().nullable().optional(),
         parent_feature_id: z.number().nullable().optional(),
-    }).optional().default({}),
-    url: z.string().optional().default(""),
-    related_links: z.array(z.any()).optional().default([]),
-    files: z.array(SubtitleFileSchema).optional().default([]),
+    }).nullish().transform(v => v ?? {}),
+    url: z.string().nullish().transform(v => v ?? ""),
+    related_links: z.array(z.any()).nullish().transform(v => v ?? []),
+    files: z.array(SubtitleFileSchema).nullish().transform(v => v ?? []),
 });
 export const SubtitleSchema = z.object({
     id: z.string(),
@@ -72,6 +72,33 @@ export const SearchResponseSchema = z.object({
     page: z.number(),
     data: z.array(SubtitleSchema),
 });
+const SearchEnvelopeSchema = z.object({
+    total_pages: z.number().nullish().transform(v => v ?? 0),
+    total_count: z.number().nullish().transform(v => v ?? 0),
+    per_page: z.number().nullish().transform(v => v ?? 0),
+    page: z.number().nullish().transform(v => v ?? 1),
+    data: z.array(z.unknown()).nullish().transform(v => v ?? []),
+});
+/**
+ * Validate a search response record by record. A record that does not match the
+ * schema is skipped (and counted in the log) instead of failing the whole search.
+ */
+export function parseSearchResponse(raw) {
+    const envelope = SearchEnvelopeSchema.parse(raw);
+    const data = [];
+    let skipped = 0;
+    for (const item of envelope.data) {
+        const parsed = SubtitleSchema.safeParse(item);
+        if (parsed.success)
+            data.push(parsed.data);
+        else
+            skipped++;
+    }
+    if (skipped > 0) {
+        console.error(`Search response: skipped ${skipped} record(s) that did not match the schema`);
+    }
+    return { ...envelope, data };
+}
 export const DownloadResponseSchema = z.object({
     link: z.string(),
     file_name: z.string(),
@@ -84,8 +111,8 @@ export const DownloadResponseSchema = z.object({
 export class OpenSubtitlesKongClient {
     client;
     baseURL;
-    defaultApiKey = "A4grIoZ8vC7C75aE1NxShRVwbqrLMsB2";
-    constructor(baseURL = "https://api.opensubtitles.com") {
+    defaultApiKey = process.env.OPENSUBTITLES_API_KEY || process.env.OPENSUBTITLES_USER_KEY || "A4grIoZ8vC7C75aE1NxShRVwbqrLMsB2";
+    constructor(baseURL = process.env.OPENSUBTITLES_API_BASE || "https://api.opensubtitles.com") {
         this.baseURL = baseURL;
         this.client = axios.create({
             baseURL: this.baseURL,
@@ -113,12 +140,8 @@ export class OpenSubtitlesKongClient {
         });
         // Request interceptor for logging
         this.client.interceptors.request.use((config) => {
-            const queryString = config.params ? new URLSearchParams(config.params).toString() : '';
-            const fullUrl = `${config.baseURL}${config.url}${queryString ? '?' + queryString : ''}`;
+            // Method and path only: headers carry the Api-Key and Bearer token.
             console.error(`Making request to: ${config.method?.toUpperCase()} ${config.url}`);
-            console.error(`Full URL with params: ${fullUrl}`);
-            console.error(`Headers:`, JSON.stringify(config.headers, null, 2));
-            console.error(`Params:`, JSON.stringify(config.params, null, 2));
             return config;
         });
         // Response interceptor for error handling and redirect debugging
@@ -129,7 +152,6 @@ export class OpenSubtitlesKongClient {
             if (error.response) {
                 console.error(`API Error: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
                 console.error(`Error URL: ${error.response.config?.url}`);
-                console.error(`Error headers:`, error.response.headers);
                 // Handle specific Kong/OpenSubtitles error codes
                 switch (error.response.status) {
                     case 429:
@@ -207,7 +229,7 @@ export class OpenSubtitlesKongClient {
             params: sortedParams,
             headers,
         });
-        return SearchResponseSchema.parse(response.data);
+        return parseSearchResponse(response.data);
     }
     async downloadSubtitle(params, userApiKeyOrToken, isToken = false) {
         const headers = {};

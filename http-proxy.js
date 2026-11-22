@@ -37,11 +37,25 @@ async function createHttpProxyServer() {
         }
       });
 
-      // Get tools from the HTTP server
-      const response = await axiosInstance.get(`${REMOTE_SERVER_URL}/tools`);
-      console.error("DEBUG: HTTP server tools response:", response.data);
+      // Ask the MCP endpoint for the tool list
+      const response = await axiosInstance.post(`${REMOTE_SERVER_URL}/mcp`, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/list",
+        params: {}
+      });
 
-      return response.data;
+      if (response.data?.error) {
+        throw new Error(response.data.error.message || "tools/list failed");
+      }
+
+      const tools = response.data?.result?.tools;
+      if (!Array.isArray(tools)) {
+        throw new Error("Invalid tools/list response from HTTP server");
+      }
+
+      console.error("DEBUG: HTTP server tools:", tools.map(t => t.name));
+      return { tools };
     } catch (error) {
       console.error("ERROR: Failed to connect to HTTP server:", error.message);
       throw new Error(`HTTP server unavailable: ${error.message}`);

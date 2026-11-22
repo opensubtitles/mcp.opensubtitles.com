@@ -5,6 +5,34 @@ All notable changes to the OpenSubtitles MCP Server project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-11-22
+
+Hotfix for the hosted server while 2.0.0 is prepared.
+
+### Fixed
+- **Streamable HTTP framing** (from PR #3 by @iOSDevSK): responses are one plain JSON
+  document for every client. The hand-written chunk markers (`dc6\r\n{...`) and the
+  User-Agent switch are gone; `/mcp` is served next to `/message`.
+- `search_subtitles` no longer fails with "Expected number, received null" when the API
+  returns `null` for `feature_details.year` and similar fields (#4). Records are
+  validated one by one, so one malformed record no longer hides the others.
+- `initialize` answers with a protocol version the server supports instead of echoing
+  any requested value.
+- Tool errors carry `isError: true`.
+- `OPENSUBTITLES_API_KEY` (or `OPENSUBTITLES_USER_KEY`) and `OPENSUBTITLES_API_BASE`
+  are read from the environment; they were documented but ignored (also reported in PR #3).
+
+### Security
+- Tool arguments, request parameters, API request headers (`Api-Key`, Bearer token),
+  usernames and raw login errors are no longer written to the log.
+- `calculate_file_hash` is not offered over HTTP: there it read files on the server's
+  own disk. It remains available in stdio mode.
+- `GET /debug` is removed, and `GET /mcp` no longer echoes the caller's request headers.
+
+### Kept
+- `/json` stays as an alias of `/mcp` for clients (e.g. claude.ai custom connectors)
+  that adopted it as the 1.5.0 workaround. It will be removed in 2.x with notice.
+
 ## [1.5.0] - 2025-09-28
 
 ### Fixed
