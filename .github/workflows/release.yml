@@ -1,0 +1,68 @@
+name: Release
+
+# Publishes @opensubtitles/mcp-server to npm with OIDC Trusted Publishing (no NPM_TOKEN),
+# and the Docker image to GHCR. One-time setup on npmjs.com: package settings ->
+# Trusted Publisher -> GitHub Actions, repo opensubtitles/mcp.opensubtitles.com,
+# workflow release.yml.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+      - name: npm >= 11.5 for trusted publishing
+        run: npm install -g npm@latest
+      - run: npm ci
+      - name: Tag matches package.json and src/config.ts
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          test "$(node -p "require('./package.json').version")" = "$v"
+          grep -q "VERSION = \"$v\"" src/config.ts
+          test "$(node -p "require('./server.json').version")" = "$v"
+      - run: npm test
+      - run: npm run smoke:inspector
+      - name: Publish (idempotent)
+        run: |
+          name=$(node -p "require('./package.json').name"); version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then echo "::notice::$name@$version already published"; exit 0; fi
+          npm publish --provenance --access public
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file <(awk "/^## \\[${GITHUB_REF_NAME#v}\\]/{f=1;next} /^## \\[/{f=0} f" CHANGELOG.md) || true
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

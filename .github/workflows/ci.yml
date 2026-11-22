@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master, v2]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: MCP Inspector smoke test (stdio + http)
+        if: matrix.node == 24
+        run: npm run smoke:inspector
+      - name: Package contents
+        if: matrix.node == 24
+        run: npm pack --dry-run
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: opensubtitles-mcp:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Container smoke test
+        run: |
+          set -eu
+          docker run -d --name mcp-test -p 1620:1620 opensubtitles-mcp:test
+          trap 'docker logs mcp-test; docker rm -f mcp-test >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:1620/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:1620/health | grep -q '"version":"2.0.0"'
+          # Raw POST must parse as JSON for any User-Agent (1.x framing defect guard).
+          curl -fsS -A 'Go-http-client/2.0' -H 'Content-Type: application/json' \
+            http://127.0.0.1:1620/mcp \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["result"]["serverInfo"]["version"]=="2.0.0"'

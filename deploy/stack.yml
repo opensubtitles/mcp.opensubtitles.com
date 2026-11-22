@@ -1,0 +1,42 @@
+# Docker Swarm stack for docker1-3 (same pattern as guessit).
+#   docker stack deploy --with-registry-auth -c deploy/stack.yml mcp
+# Image is built on docker1 and pushed to the internal registry; keep the previous
+# tag as the rollback image. lb1: point backend node1-mcp at docker1-3:1620 with
+# `option httpchk GET /health`.
+services:
+  opensubtitles-mcp:
+    image: gitlab.int.opensubtitles.org:5050/devops/opensubtitles-mcp:${MCP_TAG:-2.0.0}
+    environment:
+      MCP_MODE: http
+      HOST: 0.0.0.0
+      PORT: "1620"
+      TRUST_PROXY: "1"
+      PUBLIC_URL: https://mcp.opensubtitles.com
+      RATE_LIMIT_PER_MINUTE: "120"
+      LOG_LEVEL: info
+      # Server key for anonymous search: a Docker secret or env from the host.
+      OPENSUBTITLES_API_KEY: ${OPENSUBTITLES_API_KEY:?set the server API key}
+      LOG_SALT: ${MCP_LOG_SALT:?set a random salt for anonymised client ids}
+    ports:
+      - target: 1620
+        published: 1620
+        protocol: tcp
+        mode: host
+    deploy:
+      mode: global
+      update_config:
+        parallelism: 1
+        delay: 60s
+        failure_action: rollback
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:1620/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

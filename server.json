@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.opensubtitles/mcp-server",
+  "title": "OpenSubtitles",
+  "description": "Search, inspect and download subtitles for movies and TV from OpenSubtitles.com.",
+  "repository": {
+    "url": "https://github.com/opensubtitles/mcp.opensubtitles.com",
+    "source": "github"
+  },
+  "websiteUrl": "https://mcp.opensubtitles.com",
+  "version": "2.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@opensubtitles/mcp-server",
+      "version": "2.0.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        { "name": "OPENSUBTITLES_API_KEY", "description": "Your OpenSubtitles API key (free at https://www.opensubtitles.com/consumers). Optional for search, needed for downloads.", "isRequired": false, "isSecret": true, "format": "string" },
+        { "name": "OPENSUBTITLES_USERNAME", "description": "Your OpenSubtitles username, for your account's download quota and VIP status", "isRequired": false, "isSecret": false, "format": "string" },
+        { "name": "OPENSUBTITLES_PASSWORD", "description": "Your OpenSubtitles password", "isRequired": false, "isSecret": true, "format": "string" }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.opensubtitles.com/mcp",
+      "headers": [
+        { "name": "Api-Key", "description": "Your OpenSubtitles API key (needed for downloads)", "isRequired": false, "isSecret": true },
+        { "name": "X-OpenSubtitles-Token", "description": "Login token from the OpenSubtitles API, for your account's quota", "isRequired": false, "isSecret": true }
+      ]
+    }
+  ]
+}
