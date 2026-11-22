@@ -34,7 +34,7 @@ export const registerSubtitleDetails: Register = (server, deps) => {
         "Full metadata for one subtitle from a search result: all files (multi-CD), uploader, comments, links, and related subtitles for the same title and language. Does not use download quota.",
       inputSchema: DetailsInput,
       outputSchema: DetailsOutput,
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: { title: "Subtitle details", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     instrument("get_subtitle_details", deps, async (input, deps) => {
       const filters = { id: input.feature_id, languages: input.language?.toLowerCase() };

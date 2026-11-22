@@ -25,12 +25,13 @@ jobs:
       - name: npm >= 11.5 for trusted publishing
         run: npm install -g npm@latest
       - run: npm ci
-      - name: Tag matches package.json and src/config.ts
+      - name: Tag matches package.json, src/config.ts, server.json and plugin.json
         run: |
           v="${GITHUB_REF_NAME#v}"
           test "$(node -p "require('./package.json').version")" = "$v"
           grep -q "VERSION = \"$v\"" src/config.ts
           test "$(node -p "require('./server.json').version")" = "$v"
+          test "$(node -p "require('./plugin.json').version")" = "$v"
       - run: npm test
       - run: npm run smoke:inspector
       - name: Publish (idempotent)

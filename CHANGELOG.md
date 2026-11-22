@@ -25,11 +25,18 @@ A rewrite on the MCP TypeScript SDK v2. **Breaking**: see the migration notes be
 - New: `get_subtitle_details`, `search_features`, `list_languages`, `guess_filename`, `get_user_info`.
 - `download_subtitle`: format/FPS/time-shift conversion, text or link delivery, remaining quota.
 - `calculate_file_hash`: stdio only.
-- Every tool has `title`, `outputSchema` + `structuredContent`, and `annotations`. Errors the
+- Every tool has `title`, `outputSchema` + `structuredContent`, and `annotations` (including
+  `annotations.title`). Errors the
   agent can act on are `isError` results with a concrete suggestion; REST 401/403/406/429 map to
   clear messages with reset times.
 - Resources: search guide, limits and quota rules, languages. Prompts: `find_subtitles_for_file`,
   `find_subtitles_for_title`, `sync_or_convert`.
+
+### Distribution
+- `plugin.json` and `mcp.json` at the repo root (Agent Plugins 1.0.0), so plugin directories
+  such as cursor.directory detect the server from the GitHub repo: local stdio
+  `npx -y @opensubtitles/mcp-server` and the hosted `https://mcp.opensubtitles.com/mcp`.
+  Not shipped in the npm package.
 
 ### Security
 - Credentials are configuration only: env in stdio; `Api-Key`, `X-OpenSubtitles-Token`,

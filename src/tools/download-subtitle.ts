@@ -58,7 +58,7 @@ export const registerDownloadSubtitle: Register = (server, deps) => {
         "Download one subtitle file by file_id and return its text (or a temporary link), with optional format conversion, FPS conversion or time shift. Each call uses one download from the user's daily OpenSubtitles quota, so pick the file with search_subtitles first; the result reports the remaining quota.",
       inputSchema: DownloadInput,
       outputSchema: DownloadOutput,
-      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+      annotations: { title: "Download subtitle", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     instrument("download_subtitle", deps, async (input, deps) => {
       if (deps.mode === "http" && !deps.api.hasUserCredentials) {

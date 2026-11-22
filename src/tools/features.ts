@@ -31,7 +31,7 @@ export const registerSearchFeatures: Register = (server, deps) => {
         "Look up movies, TV shows and episodes on OpenSubtitles (title, year, IMDb/TMDB/feature ids, seasons and episode counts, subtitle counts per language). Use it to disambiguate a title before search_subtitles, or to find a show's seasons and episodes.",
       inputSchema: FeaturesInput,
       outputSchema: FeaturesOutput,
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: { title: "Find movies and TV shows", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     instrument("search_features", deps, async (input, deps) => {
       if (!input.query && !input.imdb_id && !input.tmdb_id && !input.feature_id) {

@@ -256,7 +256,7 @@ describe("legacy JSON text block", () => {
 });
 
 describe("version", () => {
-  it("is the same in package.json, src/config.ts and server.json", async () => {
+  it("is the same in package.json, src/config.ts, server.json and plugin.json", async () => {
     const { readFileSync } = await import("node:fs");
     const { VERSION } = await import("../src/config.js");
     const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
@@ -265,5 +265,10 @@ describe("version", () => {
     expect(srv.version).toBe(VERSION);
     expect(srv.packages[0].version).toBe(VERSION);
     expect(pkg.mcpName).toBe(srv.name);
+    const plugin = JSON.parse(readFileSync(new URL("../plugin.json", import.meta.url), "utf8"));
+    expect(plugin.version).toBe(VERSION);
+    const mcp = JSON.parse(readFileSync(new URL("../mcp.json", import.meta.url), "utf8"));
+    expect(mcp.mcpServers.opensubtitles.args).toContain(pkg.name);
+    expect(mcp.mcpServers["opensubtitles-remote"].url).toBe(srv.remotes[0].url);
   });
 });

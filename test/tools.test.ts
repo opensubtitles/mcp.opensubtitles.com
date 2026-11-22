@@ -41,6 +41,7 @@ describe("tools/list", () => {
       expect(t.title, t.name).toBeTruthy();
       expect(t.description!.length, t.name).toBeGreaterThan(40);
       expect(t.outputSchema, t.name).toBeTruthy();
+      expect(t.annotations?.title, t.name).toBe(t.title);
       expect(t.annotations?.destructiveHint, t.name).toBe(false);
       expect(typeof t.annotations?.readOnlyHint, t.name).toBe("boolean");
       expect(typeof t.annotations?.idempotentHint, t.name).toBe("boolean");

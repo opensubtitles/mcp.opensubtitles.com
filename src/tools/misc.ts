@@ -31,7 +31,7 @@ export const registerListLanguages: Register = (server, deps) => {
         "The subtitle language codes OpenSubtitles supports (e.g. en, pt-BR, zh-CN) with their names. Use the codes in search_subtitles.languages. Also available as the opensubtitles://languages resource.",
       inputSchema: z.object({}).strict(),
       outputSchema: z.object({ languages: z.array(Language) }),
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: { title: "List subtitle languages", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     instrument("list_languages", deps, async (_args, deps) => {
       const languages = await getLanguages(deps.api);
@@ -56,7 +56,7 @@ export const registerGuessFilename: Register = (server, deps) => {
         filename: z.string().trim().min(1).max(500).describe("e.g. \"The.Matrix.1999.1080p.BluRay.x264-GROUP.mkv\""),
       }),
       outputSchema: GuessOut,
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      annotations: { title: "Parse a video filename", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     instrument("guess_filename", deps, async ({ filename }, deps) => {
       const g = await guessFilename(filename);
@@ -88,7 +88,7 @@ export const registerCalculateFileHash: Register = (server, deps) => {
         file_path: z.string().trim().min(1).max(4096).describe("Absolute path, or relative to the server's working directory; ~ is expanded"),
       }),
       outputSchema: z.object({ moviehash: z.string(), moviebytesize: z.number(), file_name: z.string() }),
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      annotations: { title: "Hash a local video file", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     instrument("calculate_file_hash", deps, async ({ file_path }, deps) => {
       const p = file_path.startsWith("~/") ? resolve(homedir(), file_path.slice(2)) : isAbsolute(file_path) ? file_path : resolve(file_path);
@@ -130,7 +130,7 @@ export const registerGetUserInfo: Register = (server, deps) => {
         "The logged-in OpenSubtitles user's level, VIP status, daily download allowance and downloads remaining, so you can plan downloads. Needs a configured login; does not use quota.",
       inputSchema: z.object({}).strict(),
       outputSchema: UserInfoOut,
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: { title: "Account and quota", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     instrument("get_user_info", deps, async (_args, deps) => {
       const u = await deps.api.userInfo();

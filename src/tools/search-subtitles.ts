@@ -92,7 +92,7 @@ export const registerSearchSubtitles: Register = (server, deps) => {
         "Find subtitles for a movie or TV episode and get file_ids to download. Search by title (query), video filename, IMDb/TMDB/feature id with optional season/episode, or moviehash; filter by language and flags. Results are ranked with exact title, episode and release-name matches first.",
       inputSchema: SearchInput,
       outputSchema: SearchOutput,
-      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      annotations: { title: "Search subtitles", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     instrument("search_subtitles", deps, async (input, deps) => {
       const out = await searchSubtitles(deps, input);
