@@ -13,7 +13,7 @@ export const DetailsInput = z.object({
   subtitle_id: z.union([z.string().regex(/^\d{1,12}$/), z.number().int().positive()]).transform(String).describe("subtitle_id from search_subtitles"),
   feature_id: z.number().int().positive().describe("feature.feature_id of the same search result"),
   language: LANGUAGE_CODE.optional().describe("The subtitle's language (speeds up the lookup)"),
-  related_limit: z.number().int().min(0).max(20).default(5),
+  related_limit: z.number().int().min(0).max(20).default(5).describe("How many related subtitles (same title and language) to return, 0-20"),
 });
 
 export const DetailsOutput = z.object({

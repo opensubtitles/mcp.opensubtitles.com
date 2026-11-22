@@ -68,7 +68,7 @@ describe("Streamable HTTP framing (guards 1.x defect 1)", () => {
       expect(raw.startsWith("{")).toBe(true);
       const body = JSON.parse(raw);
       expect(body.result.protocolVersion).toBe("2025-06-18");
-      expect(body.result.serverInfo).toMatchObject({ name: "opensubtitles", version: "2.0.2" });
+      expect(body.result.serverInfo).toMatchObject({ name: "opensubtitles", version: "2.0.3" });
       // Spec-shaped: no tool list or custom fields in capabilities.
       expect(Object.keys(body.result.capabilities).sort()).toEqual(["prompts", "resources", "tools"]);
       expect(body.result.capabilities.tools).toEqual({ listChanged: false });
@@ -229,7 +229,7 @@ describe("credentials from connection headers", () => {
 describe("HTTP surface", () => {
   it("/health returns exactly {status, version}", async () => {
     const res = await fetch(base + "/health");
-    expect(await res.json()).toEqual({ status: "ok", version: "2.0.2" });
+    expect(await res.json()).toEqual({ status: "ok", version: "2.0.3" });
   });
   it("/debug, /proxy, /sse and other paths are gone", async () => {
     for (const p of ["/debug", "/proxy", "/sse", "/tools"]) {

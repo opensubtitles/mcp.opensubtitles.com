@@ -42,6 +42,9 @@ describe("tools/list", () => {
       expect(t.description!.length, t.name).toBeGreaterThan(40);
       expect(t.outputSchema, t.name).toBeTruthy();
       expect(t.annotations?.title, t.name).toBe(t.title);
+      for (const [arg, schema] of Object.entries((t.inputSchema.properties ?? {}) as Record<string, { description?: string }>)) {
+        expect(schema.description, `${t.name}.${arg} has a description`).toBeTruthy();
+      }
       expect(t.annotations?.destructiveHint, t.name).toBe(false);
       expect(typeof t.annotations?.readOnlyHint, t.name).toBe("boolean");
       expect(typeof t.annotations?.idempotentHint, t.name).toBe("boolean");

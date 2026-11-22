@@ -1,6 +1,6 @@
 {
   "name": "@opensubtitles/mcp-server",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Official OpenSubtitles MCP server: search, inspect and download subtitles from AI agents (stdio and Streamable HTTP).",
   "mcpName": "com.opensubtitles/mcp-server",
   "type": "module",

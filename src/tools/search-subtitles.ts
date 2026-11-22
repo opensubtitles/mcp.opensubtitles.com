@@ -34,9 +34,9 @@ export const SearchInput = z.object({
   imdb_id: ImdbId.optional().describe("IMDb id (tt0133093 or 133093). With season_number/episode_number it is the show's id."),
   tmdb_id: z.number().int().positive().optional().describe("TMDB id. With season_number/episode_number it is the show's id."),
   feature_id: z.number().int().positive().optional().describe("OpenSubtitles feature id from search_features. With season_number/episode_number it is the show's id."),
-  season_number: z.number().int().min(0).max(999).optional(),
-  episode_number: z.number().int().min(0).max(9999).optional(),
-  year: z.number().int().min(1870).max(2100).optional(),
+  season_number: z.number().int().min(0).max(999).optional().describe("TV season number; use with episode_number and the show's query or id"),
+  episode_number: z.number().int().min(0).max(9999).optional().describe("TV episode number within season_number"),
+  year: z.number().int().min(1870).max(2100).optional().describe("Release year, to tell remakes and same-name titles apart"),
   type: z.enum(["movie", "episode", "all"]).optional().describe("Restrict to movies or TV episodes"),
   languages: z.array(LANGUAGE_CODE).min(1).max(20).optional().describe("Subtitle languages in order of preference, e.g. [\"en\", \"pt-BR\"]. Omit for all languages."),
   moviehash: z
@@ -57,8 +57,8 @@ export const SearchInput = z.object({
     .boolean()
     .default(true)
     .describe("When searching by title, first resolve it to the exact movie/show (so \"The Matrix\" does not return \"The Matrix Revisited\"). Set false for a fuzzy text search."),
-  page: z.number().int().min(1).max(1000).default(1),
-  per_page: z.number().int().min(1).max(100).default(20),
+  page: z.number().int().min(1).max(1000).default(1).describe("Result page, starting at 1"),
+  per_page: z.number().int().min(1).max(100).default(20).describe("Results per page (1-100)"),
 });
 export type SearchInput = z.infer<typeof SearchInput>;
 

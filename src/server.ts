@@ -20,7 +20,7 @@ export const INSTRUCTIONS =
   "Use search_features to disambiguate titles, get_subtitle_details to inspect a result for free, and download_subtitle only for the file you want: each download uses the user's daily quota. " +
   "Credentials are configured in the client, never passed as tool arguments; never ask the user for a password in chat. Guide: opensubtitles://guide/intelligent-search.";
 
-export const ICON = { src: "https://www.opensubtitles.com/favicon.ico", mimeType: "image/x-icon" };
+export const ICON = { src: "https://raw.githubusercontent.com/opensubtitles/mcp.opensubtitles.com/master/icon.png", mimeType: "image/png", sizes: ["512x512"] };
 const LIST_CACHE = { ttlMs: 3_600_000, cacheScope: "public" as const };
 
 export interface BuildOptions {

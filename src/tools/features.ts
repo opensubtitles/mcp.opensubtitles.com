@@ -8,13 +8,13 @@ const ImdbId = z
 
 export const FeaturesInput = z.object({
   query: z.string().trim().min(1).max(200).optional().describe("Title, e.g. \"Chicago Fire\""),
-  imdb_id: ImdbId.optional(),
-  tmdb_id: z.number().int().positive().optional(),
-  feature_id: z.number().int().positive().optional(),
-  type: z.enum(["movie", "tvshow", "episode", "all"]).default("all"),
-  year: z.number().int().min(1870).max(2100).optional(),
+  imdb_id: ImdbId.optional().describe("IMDb id (tt0133093 or 133093)"),
+  tmdb_id: z.number().int().positive().optional().describe("TMDB id"),
+  feature_id: z.number().int().positive().optional().describe("OpenSubtitles feature id"),
+  type: z.enum(["movie", "tvshow", "episode", "all"]).default("all").describe("Restrict to movies, TV shows or episodes"),
+  year: z.number().int().min(1870).max(2100).optional().describe("Release year"),
   include_episodes: z.boolean().default(false).describe("List every episode (title, feature_id, IMDb id) per season for TV shows"),
-  limit: z.number().int().min(1).max(50).default(10),
+  limit: z.number().int().min(1).max(50).default(10).describe("Maximum results to return (1-50)"),
 });
 
 export const FeaturesOutput = z.object({
