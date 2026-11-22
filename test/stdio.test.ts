@@ -86,7 +86,7 @@ describe.skipIf(!existsSync(BIN))("stdio binary", () => {
   }
   it("--version and --help write to stdout and exit", async () => {
     const { execFileSync } = await import("node:child_process");
-    expect(execFileSync(process.execPath, [BIN, "--version"]).toString().trim()).toBe("2.0.0");
+    expect(execFileSync(process.execPath, [BIN, "--version"]).toString().trim()).toBe("2.0.1");
     expect(execFileSync(process.execPath, [BIN, "--help"]).toString()).toMatch(/OPENSUBTITLES_API_KEY/);
   });
 });

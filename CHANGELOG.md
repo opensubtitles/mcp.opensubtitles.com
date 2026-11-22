@@ -5,6 +5,14 @@ All notable changes to the OpenSubtitles MCP Server project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-11-22
+
+### Changed
+- A login is now the recommended way to enable downloads, and an own API key is optional: the
+  download hint, README, `llms.txt`, the limits guide, `--help` and `server.json` (which now lists
+  the `X-OpenSubtitles-Username`/`-Password` headers) say so. Behaviour is unchanged: login headers
+  alone already worked, logging in with the server's app key and downloading on the user's account.
+
 ## [2.0.0] - 2026-11-22
 
 A rewrite on the MCP TypeScript SDK v2. **Breaking**: see the migration notes below.

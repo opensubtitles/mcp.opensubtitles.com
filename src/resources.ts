@@ -36,12 +36,12 @@ export const LIMITS_GUIDE = `# OpenSubtitles API limits and quotas
 
 - **Search** (search_subtitles, search_features, get_subtitle_details, list_languages) does not use download quota. The REST API allows about 5 requests per second per API key; this server also rate-limits each client.
 - **Downloads** (download_subtitle) count against a daily quota that belongs to the user:
-  - anonymous / API key only: a small daily allowance;
+  - anonymous / API key only: a small daily allowance (on the remote server, a login is required for downloads);
   - logged-in free account: the account's allowance (see get_user_info);
   - VIP: a much higher allowance.
   The quota resets 24 h after the first download of the period; every download result reports \`remaining\` and \`reset_time\`.
 - **Errors**: 401 = login needed or wrong; 403 = invalid API key; 406 = quota used up or invalid file_id (message says which, with the reset time); 429 = too many requests, retry after the given seconds.
-- **Credentials are configuration, never tool arguments.** stdio: \`OPENSUBTITLES_API_KEY\`, \`OPENSUBTITLES_USERNAME\`, \`OPENSUBTITLES_PASSWORD\` in the server's environment. Remote (https://mcp.opensubtitles.com/mcp): headers \`Api-Key\`, and \`X-OpenSubtitles-Token\` or \`X-OpenSubtitles-Username\`/\`X-OpenSubtitles-Password\`, set in the MCP client. Get a free API key at https://www.opensubtitles.com/consumers. Never ask the user to paste a password into the chat.
+- **Credentials are configuration, never tool arguments.** stdio: \`OPENSUBTITLES_API_KEY\`, \`OPENSUBTITLES_USERNAME\`, \`OPENSUBTITLES_PASSWORD\` in the server's environment. Remote (https://mcp.opensubtitles.com/mcp): headers \`X-OpenSubtitles-Username\`/\`X-OpenSubtitles-Password\` (or \`X-OpenSubtitles-Token\`) set in the MCP client; an own \`Api-Key\` header is optional. A free account: https://www.opensubtitles.com. Never ask the user to paste a password into the chat.
 `;
 
 export function registerResources(server: McpServer, deps: ToolDeps): void {

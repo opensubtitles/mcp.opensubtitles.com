@@ -15,20 +15,18 @@ The official [Model Context Protocol](https://modelcontextprotocol.io) server fo
 # Remote, search only (no account needed)
 claude mcp add --transport http opensubtitles https://mcp.opensubtitles.com/mcp
 
-# Remote, with downloads on your own quota
+# Remote, with downloads on your account's quota (free account at opensubtitles.com)
 claude mcp add --transport http opensubtitles https://mcp.opensubtitles.com/mcp \
-  --header "Api-Key: YOUR_API_KEY" \
   --header "X-OpenSubtitles-Username: YOUR_USERNAME" \
   --header "X-OpenSubtitles-Password: YOUR_PASSWORD"
 
 # Local (stdio): can also hash files on your disk
 claude mcp add opensubtitles \
-  -e OPENSUBTITLES_API_KEY=YOUR_API_KEY \
   -e OPENSUBTITLES_USERNAME=YOUR_USERNAME -e OPENSUBTITLES_PASSWORD=YOUR_PASSWORD \
   -- npx -y @opensubtitles/mcp-server
 ```
 
-Get a free API key at <https://www.opensubtitles.com/consumers>.
+Add `-s user` to make it available in every project. An own API key is optional (`--header "Api-Key: …"` / `-e OPENSUBTITLES_API_KEY=…`, free at <https://www.opensubtitles.com/consumers>).
 
 ### Claude Desktop (`claude_desktop_config.json`)
 
@@ -39,7 +37,6 @@ Get a free API key at <https://www.opensubtitles.com/consumers>.
       "command": "npx",
       "args": ["-y", "@opensubtitles/mcp-server"],
       "env": {
-        "OPENSUBTITLES_API_KEY": "YOUR_API_KEY",
         "OPENSUBTITLES_USERNAME": "YOUR_USERNAME",
         "OPENSUBTITLES_PASSWORD": "YOUR_PASSWORD"
       }
@@ -55,7 +52,10 @@ Get a free API key at <https://www.opensubtitles.com/consumers>.
   "mcpServers": {
     "opensubtitles": {
       "url": "https://mcp.opensubtitles.com/mcp",
-      "headers": { "Api-Key": "YOUR_API_KEY" }
+      "headers": {
+        "X-OpenSubtitles-Username": "YOUR_USERNAME",
+        "X-OpenSubtitles-Password": "YOUR_PASSWORD"
+      }
     }
   }
 }
@@ -69,16 +69,22 @@ Get a free API key at <https://www.opensubtitles.com/consumers>.
     "opensubtitles": {
       "type": "http",
       "url": "https://mcp.opensubtitles.com/mcp",
-      "headers": { "Api-Key": "${input:os-api-key}" }
+      "headers": {
+        "X-OpenSubtitles-Username": "${input:os-user}",
+        "X-OpenSubtitles-Password": "${input:os-pass}"
+      }
     }
   },
-  "inputs": [{ "id": "os-api-key", "type": "promptString", "description": "OpenSubtitles API key", "password": true }]
+  "inputs": [
+    { "id": "os-user", "type": "promptString", "description": "OpenSubtitles username" },
+    { "id": "os-pass", "type": "promptString", "description": "OpenSubtitles password", "password": true }
+  ]
 }
 ```
 
 ### n8n
 
-In the **MCP Client Tool** node, set *Endpoint* to `https://mcp.opensubtitles.com/mcp` and *Server Transport* to **HTTP Streamable**. For downloads, set *Authentication* to **Header Auth** with name `Api-Key` and your key as the value. `/message` still works but is deprecated (see [Migration](#migrating-from-1x)).
+In the **MCP Client Tool** node, set *Endpoint* to `https://mcp.opensubtitles.com/mcp` and *Server Transport* to **HTTP Streamable**. For downloads, set *Authentication* to **Custom Auth** with the headers `X-OpenSubtitles-Username` and `X-OpenSubtitles-Password` (or **Header Auth** with `X-OpenSubtitles-Token`). `/message` still works but is deprecated (see [Migration](#migrating-from-1x)).
 
 ## Credentials
 
@@ -86,11 +92,11 @@ Credentials are **configuration, never tool arguments**: they never pass through
 
 | | stdio (environment) | Remote (headers set in the client) |
 |---|---|---|
-| API key | `OPENSUBTITLES_API_KEY` | `Api-Key: <key>` |
-| Login | `OPENSUBTITLES_USERNAME` + `OPENSUBTITLES_PASSWORD` (logs in once, caches and refreshes the token) | `X-OpenSubtitles-Username` + `X-OpenSubtitles-Password`, or `X-OpenSubtitles-Token: <token from /login>` |
+| Login (recommended) | `OPENSUBTITLES_USERNAME` + `OPENSUBTITLES_PASSWORD` (logs in once, caches and refreshes the token) | `X-OpenSubtitles-Username` + `X-OpenSubtitles-Password`, or `X-OpenSubtitles-Token: <token from /login>` |
+| API key (optional) | `OPENSUBTITLES_API_KEY` | `Api-Key: <key>` |
 
 - **Search** works anonymously (remote: the server's key, rate-limited per client).
-- **Downloads** use *your* quota: remote downloads need at least your own `Api-Key`; add a login so your account's allowance and VIP status apply.
+- **Downloads** use *your* account's quota: set your login (a free account is enough; VIP gets more). Your own API key is optional; without one the server's app key is used. Remote downloads with only an `Api-Key` and no login also work, but then count as anonymous.
 - `Authorization: Bearer …` from 1.x configs is still accepted as a fallback. `Authorization` is reserved for MCP OAuth, so use the `X-OpenSubtitles-*` headers.
 
 ## Tools

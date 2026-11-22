@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "opensubtitles",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Search, inspect and download subtitles for movies and TV from OpenSubtitles.com.",
   "author": {
     "name": "OpenSubtitles",
