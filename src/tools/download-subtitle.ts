@@ -63,10 +63,10 @@ export const registerDownloadSubtitle: Register = (server, deps) => {
     instrument("download_subtitle", deps, async (input, deps) => {
       if (deps.mode === "http" && !deps.api.hasUserCredentials) {
         return errorResult(
-          "Downloads use your own OpenSubtitles quota, so this server needs your credentials, set once in the MCP client configuration (not in the chat): " +
-            "header 'Api-Key: <your key>' (free at https://www.opensubtitles.com/consumers), and for your account's quota/VIP also " +
-            "'X-OpenSubtitles-Token: <token>' or 'X-OpenSubtitles-Username' + 'X-OpenSubtitles-Password'. " +
-            "Example: claude mcp add --transport http opensubtitles https://mcp.opensubtitles.com/mcp --header \"Api-Key: YOUR_KEY\". Searching works without credentials.",
+          "Downloads use your own OpenSubtitles account quota, so this server needs your OpenSubtitles login, set once in the MCP client configuration (not in the chat): " +
+            "headers 'X-OpenSubtitles-Username' + 'X-OpenSubtitles-Password' (free account at https://www.opensubtitles.com), or 'X-OpenSubtitles-Token: <token>'. " +
+            "An own 'Api-Key' header is optional. " +
+            "Example: claude mcp add --transport http opensubtitles https://mcp.opensubtitles.com/mcp --header \"X-OpenSubtitles-Username: YOUR_USER\" --header \"X-OpenSubtitles-Password: YOUR_PASS\". Searching works without credentials.",
         );
       }
       const body: Record<string, unknown> = { file_id: input.file_id };

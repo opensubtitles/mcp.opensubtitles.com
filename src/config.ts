@@ -1,6 +1,6 @@
 /** Server identity and runtime configuration, read once from the environment. */
 
-export const VERSION = "2.0.0";
+export const VERSION = "2.0.1";
 export const SERVER_NAME = "opensubtitles";
 export const SERVER_TITLE = "OpenSubtitles";
 export const USER_AGENT = `OpenSubtitles MCP Server v${VERSION}`;

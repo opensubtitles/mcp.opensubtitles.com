@@ -12,9 +12,9 @@ export function llmsTxt(publicUrl: string): string {
 - REST API it wraps: https://opensubtitles.stoplight.io/docs/opensubtitles-api
 
 ## Connect
-- Claude Code (remote): \`claude mcp add --transport http opensubtitles ${publicUrl}/mcp --header "Api-Key: YOUR_KEY"\`
-- Claude Code (local): \`claude mcp add opensubtitles -e OPENSUBTITLES_API_KEY=YOUR_KEY -- npx -y @opensubtitles/mcp-server\`
-- Search works without credentials. Downloads need the user's own API key (free: https://www.opensubtitles.com/consumers) and, for an account's quota, a login (headers \`X-OpenSubtitles-Token\` or \`X-OpenSubtitles-Username\`/\`X-OpenSubtitles-Password\`; env \`OPENSUBTITLES_USERNAME\`/\`OPENSUBTITLES_PASSWORD\` locally). Credentials are never tool arguments.
+- Claude Code (remote): \`claude mcp add --transport http opensubtitles ${publicUrl}/mcp --header "X-OpenSubtitles-Username: YOUR_USER" --header "X-OpenSubtitles-Password: YOUR_PASS"\`
+- Claude Code (local): \`claude mcp add opensubtitles -e OPENSUBTITLES_USERNAME=YOUR_USER -e OPENSUBTITLES_PASSWORD=YOUR_PASS -- npx -y @opensubtitles/mcp-server\`
+- Search works without credentials. Downloads need the user's OpenSubtitles login (free account; headers \`X-OpenSubtitles-Username\`/\`X-OpenSubtitles-Password\` or \`X-OpenSubtitles-Token\`; env \`OPENSUBTITLES_USERNAME\`/\`OPENSUBTITLES_PASSWORD\` locally). An own API key (\`Api-Key\` header / \`OPENSUBTITLES_API_KEY\`) is optional. Credentials are never tool arguments.
 
 ## Tools
 - search_subtitles: find subtitles by filename, title, IMDb/TMDB/feature id + season/episode, or moviehash; filters for language, hearing impaired, AI/machine translation, trusted uploaders; paging. Returns file_ids.

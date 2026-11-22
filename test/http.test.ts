@@ -68,7 +68,7 @@ describe("Streamable HTTP framing (guards 1.x defect 1)", () => {
       expect(raw.startsWith("{")).toBe(true);
       const body = JSON.parse(raw);
       expect(body.result.protocolVersion).toBe("2025-06-18");
-      expect(body.result.serverInfo).toMatchObject({ name: "opensubtitles", version: "2.0.0" });
+      expect(body.result.serverInfo).toMatchObject({ name: "opensubtitles", version: "2.0.1" });
       // Spec-shaped: no tool list or custom fields in capabilities.
       expect(Object.keys(body.result.capabilities).sort()).toEqual(["prompts", "resources", "tools"]);
       expect(body.result.capabilities.tools).toEqual({ listChanged: false });
@@ -185,10 +185,22 @@ describe("modern (2026-07-28) MCP over HTTP", () => {
 describe("credentials from connection headers", () => {
   const dl = { jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "download_subtitle", arguments: { file_id: 30 } } };
   const H = { "MCP-Protocol-Version": "2025-06-18" };
-  it("anonymous: search works, download explains how to configure a key", async () => {
+  it("anonymous: download explains how to configure a login (API key optional)", async () => {
     const r = JSON.parse((await post(dl, H)).raw).result;
     expect(r.isError).toBe(true);
-    expect(r.content[0].text).toMatch(/--header "Api-Key: YOUR_KEY"/);
+    expect(r.content[0].text).toMatch(/--header "X-OpenSubtitles-Username: YOUR_USER" --header "X-OpenSubtitles-Password: YOUR_PASS"/);
+    expect(r.content[0].text).toMatch(/Api-Key' header is optional/);
+  });
+  it("login headers alone (no Api-Key) allow downloads: login with the server key, download with the user's token", async () => {
+    const before = api.calls.length;
+    const r = JSON.parse((await post(dl, { ...H, "X-OpenSubtitles-Username": fake("user"), "X-OpenSubtitles-Password": fake("pw") })).raw).result;
+    expect(r.isError).toBeFalsy();
+    const calls = api.calls.slice(before);
+    const login = calls.find((c) => path("/login")(c))!;
+    const download = calls.find((c) => path("/download")(c))!;
+    expect(login.headers["api-key"]).toBe(testConfig().apiKey);
+    expect(download.headers["api-key"]).toBe(testConfig().apiKey);
+    expect(download.headers.authorization).toMatch(/^Bearer /);
   });
   it("Api-Key header is used for the API call", async () => {
     const hdrKey = fake("key");
@@ -217,7 +229,7 @@ describe("credentials from connection headers", () => {
 describe("HTTP surface", () => {
   it("/health returns exactly {status, version}", async () => {
     const res = await fetch(base + "/health");
-    expect(await res.json()).toEqual({ status: "ok", version: "2.0.0" });
+    expect(await res.json()).toEqual({ status: "ok", version: "2.0.1" });
   });
   it("/debug, /proxy, /sse and other paths are gone", async () => {
     for (const p of ["/debug", "/proxy", "/sse", "/tools"]) {

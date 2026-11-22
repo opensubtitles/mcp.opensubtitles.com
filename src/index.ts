@@ -12,9 +12,9 @@ Usage:
   npx -y @opensubtitles/mcp-server --http     Streamable HTTP on $PORT (default 1620), endpoint /mcp
 
 Environment (stdio):
-  OPENSUBTITLES_API_KEY     your API key (free: https://www.opensubtitles.com/consumers)
-  OPENSUBTITLES_USERNAME    optional login, for your account's download quota / VIP
+  OPENSUBTITLES_USERNAME    your OpenSubtitles login, for your account's download quota / VIP
   OPENSUBTITLES_PASSWORD
+  OPENSUBTITLES_API_KEY     optional own API key (https://www.opensubtitles.com/consumers)
 Environment (http): PORT, HOST, OPENSUBTITLES_API_KEY (server key for anonymous search),
   ALLOWED_ORIGINS, ALLOWED_HOSTS, TRUST_PROXY, RATE_LIMIT_PER_MINUTE, PUBLIC_URL, LOG_SALT, LOG_LEVEL
 `;

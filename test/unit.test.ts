@@ -49,7 +49,7 @@ describe("OpenSubtitlesClient", () => {
     const f = mockFetch(standardRoutes());
     await api(f).searchSubtitles({ query: "x" });
     expect(f.calls[0]!.headers["api-key"]).toBe("APPKEY");
-    expect(f.calls[0]!.headers["user-agent"]).toBe("OpenSubtitles MCP Server v2.0.0");
+    expect(f.calls[0]!.headers["user-agent"]).toBe("OpenSubtitles MCP Server v2.0.1");
     expect(f.calls[0]!.headers.authorization).toBeUndefined();
   });
   it("uses the caller's own key when given", async () => {
