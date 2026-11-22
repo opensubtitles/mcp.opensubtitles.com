@@ -1,0 +1,71 @@
+name: MCP Registry
+
+# Publishes server.json to the official MCP Registry
+# (https://registry.modelcontextprotocol.io) as com.opensubtitles/mcp-server.
+# Authenticates by DNS: the opensubtitles.com apex carries the TXT record
+# "v=MCPv1; k=ed25519; p=<public key>" (shared with com.opensubtitles/guessit-js),
+# and the matching Ed25519 private key (hex seed) is the MCP_PRIVATE_KEY secret.
+# Runs after each release (called by release.yml once npm has the version, since
+# the registry checks the npm package's "mcpName"), or by hand for a given tag.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish, e.g. v2.0.0'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      NAME: com.opensubtitles/mcp-server
+      PUBLISHER_VERSION: v1.8.11
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: server.json version matches the tag
+        run: test "$(jq -r .version server.json)" = "${TAG#v}"
+
+      - name: Already published?
+        id: exists
+        run: |
+          if curl -sf "https://registry.modelcontextprotocol.io/v0/servers/com.opensubtitles%2Fmcp-server/versions/${TAG#v}" >/dev/null; then
+            echo "::notice::$NAME ${TAG#v} is already in the MCP Registry"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The registry validates the npm version; a fresh npm publish can take minutes to appear.
+      - name: Wait for the npm version
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf "https://registry.npmjs.org/@opensubtitles%2fmcp-server/${TAG#v}" >/dev/null; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::@opensubtitles/mcp-server@${TAG#v} not visible on npm after 10 minutes"; exit 1
+
+      - name: Install mcp-publisher (pinned)
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          curl -sSfL "https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher --help >/dev/null
+
+      - name: Publish
+        if: steps.exists.outputs.skip != 'true'
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
+        run: |
+          ./mcp-publisher login dns --domain opensubtitles.com
+          ./mcp-publisher publish

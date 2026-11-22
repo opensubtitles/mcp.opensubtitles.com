@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.opensubtitles/mcp-server",
   "title": "OpenSubtitles",
   "description": "Search, inspect and download subtitles for movies and TV from OpenSubtitles.com.",
