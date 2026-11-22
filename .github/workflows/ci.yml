@@ -45,12 +45,13 @@ jobs:
       - name: Container smoke test
         run: |
           set -eu
+          export V=$(node -p "require('./package.json').version")
           docker run -d --name mcp-test -p 1620:1620 opensubtitles-mcp:test
           trap 'docker logs mcp-test; docker rm -f mcp-test >/dev/null 2>&1 || true' EXIT
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:1620/health && break; sleep 1; done
-          curl -fsS http://127.0.0.1:1620/health | grep -q '"version":"2.0.0"'
+          curl -fsS http://127.0.0.1:1620/health | grep -q "\"version\":\"$V\""
           # Raw POST must parse as JSON for any User-Agent (1.x framing defect guard).
           curl -fsS -A 'Go-http-client/2.0' -H 'Content-Type: application/json' \
             http://127.0.0.1:1620/mcp \
             -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
-            | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["result"]["serverInfo"]["version"]=="2.0.0"'
+            | python3 -c 'import json,sys; d=json.load(sys.stdin); import os; assert d["result"]["serverInfo"]["version"]==os.environ["V"]'
