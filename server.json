@@ -8,18 +8,47 @@
     "source": "github"
   },
   "websiteUrl": "https://mcp.opensubtitles.com",
-  "version": "2.0.2",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/opensubtitles/mcp.opensubtitles.com/master/icon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ]
+    }
+  ],
+  "version": "2.0.3",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@opensubtitles/mcp-server",
-      "version": "2.0.2",
-      "transport": { "type": "stdio" },
+      "version": "2.0.3",
+      "transport": {
+        "type": "stdio"
+      },
       "environmentVariables": [
-        { "name": "OPENSUBTITLES_API_KEY", "description": "Optional own OpenSubtitles API key (https://www.opensubtitles.com/consumers); a built-in app key is used otherwise", "isRequired": false, "isSecret": true, "format": "string" },
-        { "name": "OPENSUBTITLES_USERNAME", "description": "Your OpenSubtitles username, for your account's download quota and VIP status", "isRequired": false, "isSecret": false, "format": "string" },
-        { "name": "OPENSUBTITLES_PASSWORD", "description": "Your OpenSubtitles password", "isRequired": false, "isSecret": true, "format": "string" }
+        {
+          "name": "OPENSUBTITLES_API_KEY",
+          "description": "Optional own OpenSubtitles API key (https://www.opensubtitles.com/consumers); a built-in app key is used otherwise",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "OPENSUBTITLES_USERNAME",
+          "description": "Your OpenSubtitles username, for your account's download quota and VIP status",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "OPENSUBTITLES_PASSWORD",
+          "description": "Your OpenSubtitles password",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
       ]
     }
   ],
@@ -28,10 +57,30 @@
       "type": "streamable-http",
       "url": "https://mcp.opensubtitles.com/mcp",
       "headers": [
-        { "name": "X-OpenSubtitles-Username", "description": "Your OpenSubtitles username; with the password, enables downloads on your account's quota", "isRequired": false, "isSecret": false },
-        { "name": "X-OpenSubtitles-Password", "description": "Your OpenSubtitles password", "isRequired": false, "isSecret": true },
-        { "name": "X-OpenSubtitles-Token", "description": "Alternative to username/password: a login token from the OpenSubtitles API", "isRequired": false, "isSecret": true },
-        { "name": "Api-Key", "description": "Optional own OpenSubtitles API key", "isRequired": false, "isSecret": true }
+        {
+          "name": "X-OpenSubtitles-Username",
+          "description": "Your OpenSubtitles username; with the password, enables downloads on your account's quota",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "X-OpenSubtitles-Password",
+          "description": "Your OpenSubtitles password",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "X-OpenSubtitles-Token",
+          "description": "Alternative to username/password: a login token from the OpenSubtitles API",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "Api-Key",
+          "description": "Optional own OpenSubtitles API key",
+          "isRequired": false,
+          "isSecret": true
+        }
       ]
     }
   ]
