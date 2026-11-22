@@ -13,6 +13,9 @@ import { clientId, log, registerSecret } from "./log.js";
 import { RateLimiter } from "./ratelimit.js";
 import { buildServer } from "./server.js";
 
+/** /message and /json are removed on this date (RFC 8594 Sunset header). */
+export const LEGACY_SUNSET = "Mon, 01 Mar 2027 00:00:00 GMT";
+
 const MCP_PATHS = new Set(["/mcp", "/message", "/json"]);
 const DEPRECATED_PATHS = new Set(["/message", "/json"]);
 const ALLOW_HEADERS = [
@@ -109,7 +112,7 @@ function corsHeaders(origin: string | undefined): Record<string, string> {
     Vary: "Origin",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": ALLOW_HEADERS,
-    "Access-Control-Expose-Headers": "Mcp-Session-Id, MCP-Protocol-Version, Retry-After",
+    "Access-Control-Expose-Headers": "Mcp-Session-Id, MCP-Protocol-Version, Retry-After, Deprecation, Sunset, Link",
     "Access-Control-Max-Age": "600",
   };
 }
@@ -300,6 +303,7 @@ export function createHttpServer({ config, fetch: fetchFn }: HttpServerOptions):
       });
       if (DEPRECATED_PATHS.has(path)) {
         outHeaders.Deprecation = "true";
+        outHeaders.Sunset = LEGACY_SUNSET;
         outHeaders.Link = `<${config.publicUrl}/mcp>; rel="successor-version"`;
       }
       res.writeHead(response.status, outHeaders);

@@ -5,6 +5,12 @@ All notable changes to the OpenSubtitles MCP Server project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-11-22
+
+### Changed
+- `/message` and `/json` (deprecated 1.x endpoints) now announce their removal date, 2027-03-01,
+  with a `Sunset` header (RFC 8594) next to `Deprecation` and `Link: rel="successor-version"`.
+
 ## [2.0.1] - 2026-11-22
 
 ### Changed
@@ -62,7 +68,7 @@ A rewrite on the MCP TypeScript SDK v2. **Breaking**: see the migration notes be
 1. Remove `username`, `password`, `user_api_key` from tool calls; configure credentials in the
    client instead (README, "Credentials").
 2. Point clients at `https://mcp.opensubtitles.com/mcp`. `/message` and `/json` keep working and
-   answer with a `Deprecation` header; they will be removed in a later 2.x release with notice.
+   answer with a `Deprecation` header; they will be removed on 2027-03-01.
 3. `languages: "en,de"` becomes `["en","de"]`; `machine_translated`/`ai_translated`/
    `trusted_sources` become `include_machine_translated`/`include_ai_translated`/`trusted_only`
    booleans; `parent_imdb_id` becomes `imdb_id` with `season_number`/`episode_number`.
