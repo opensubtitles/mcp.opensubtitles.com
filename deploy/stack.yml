@@ -5,7 +5,7 @@
 # `option httpchk GET /health`.
 services:
   opensubtitles-mcp:
-    image: gitlab.int.opensubtitles.org:5050/devops/opensubtitles-mcp:${MCP_TAG:-2.0.1}
+    image: gitlab.int.opensubtitles.org:5050/devops/opensubtitles-mcp:${MCP_TAG:-2.0.2}
     environment:
       MCP_MODE: http
       HOST: 0.0.0.0

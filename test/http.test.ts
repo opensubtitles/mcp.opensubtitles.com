@@ -68,7 +68,7 @@ describe("Streamable HTTP framing (guards 1.x defect 1)", () => {
       expect(raw.startsWith("{")).toBe(true);
       const body = JSON.parse(raw);
       expect(body.result.protocolVersion).toBe("2025-06-18");
-      expect(body.result.serverInfo).toMatchObject({ name: "opensubtitles", version: "2.0.1" });
+      expect(body.result.serverInfo).toMatchObject({ name: "opensubtitles", version: "2.0.2" });
       // Spec-shaped: no tool list or custom fields in capabilities.
       expect(Object.keys(body.result.capabilities).sort()).toEqual(["prompts", "resources", "tools"]);
       expect(body.result.capabilities.tools).toEqual({ listChanged: false });
@@ -229,7 +229,7 @@ describe("credentials from connection headers", () => {
 describe("HTTP surface", () => {
   it("/health returns exactly {status, version}", async () => {
     const res = await fetch(base + "/health");
-    expect(await res.json()).toEqual({ status: "ok", version: "2.0.1" });
+    expect(await res.json()).toEqual({ status: "ok", version: "2.0.2" });
   });
   it("/debug, /proxy, /sse and other paths are gone", async () => {
     for (const p of ["/debug", "/proxy", "/sse", "/tools"]) {
@@ -245,6 +245,7 @@ describe("HTTP surface", () => {
     for (const p of ["/message", "/json"]) {
       const { res, raw } = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" }, { "MCP-Protocol-Version": "2025-06-18" }, p);
       expect(res.headers.get("deprecation")).toBe("true");
+      expect(res.headers.get("sunset")).toBe("Mon, 01 Mar 2027 00:00:00 GMT");
       expect(res.headers.get("link")).toMatch(/\/mcp>; rel="successor-version"/);
       expect(JSON.parse(raw).result.tools.length).toBe(7);
     }

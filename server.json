@@ -8,13 +8,13 @@
     "source": "github"
   },
   "websiteUrl": "https://mcp.opensubtitles.com",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@opensubtitles/mcp-server",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "transport": { "type": "stdio" },
       "environmentVariables": [
         { "name": "OPENSUBTITLES_API_KEY", "description": "Optional own OpenSubtitles API key (https://www.opensubtitles.com/consumers); a built-in app key is used otherwise", "isRequired": false, "isSecret": true, "format": "string" },

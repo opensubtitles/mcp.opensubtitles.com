@@ -122,7 +122,7 @@ Every tool has a `title`, an `inputSchema` with real types and limits, an `outpu
 2.0.0 is a breaking release. The changes for existing users:
 
 1. **Credentials moved out of tool arguments.** `username`, `password` and `user_api_key` arguments are gone. Configure them once in the client (see [Credentials](#credentials)).
-2. **Endpoint:** use `https://mcp.opensubtitles.com/mcp`. `/message` and `/json` still work and answer with a `Deprecation` header; they will be removed in a later 2.x release, with notice.
+2. **Endpoint:** use `https://mcp.opensubtitles.com/mcp`. `/message` and `/json` still work and answer with `Deprecation` and `Sunset` headers; they will be **removed on 2027-03-01**.
 3. **Tool inputs:** `languages` is an array (`["en","pt-BR"]`); `hearing_impaired`/`foreign_parts_only` are `include|exclude|only`; `machine_translated`/`ai_translated`/`trusted_sources` became booleans `include_machine_translated`, `include_ai_translated`, `trusted_only`; `parent_imdb_id` is now `imdb_id` with `season_number`/`episode_number`.
 4. **Results** are structured (`structuredContent`) with `file_id`s, paging (`page`, `per_page`, `total_count`, `total_pages`) and flags, not a Markdown top-5 list.
 5. **`calculate_file_hash`** exists only in local (stdio) mode. On the remote server, hash locally and pass `moviehash`.
