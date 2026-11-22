@@ -1,60 +1,65 @@
 {
   "name": "@opensubtitles/mcp-server",
-  "version": "1.5.1",
-  "description": "MCP server for OpenSubtitles API integration",
+  "version": "2.0.0",
+  "description": "Official OpenSubtitles MCP server: search, inspect and download subtitles from AI agents (stdio and Streamable HTTP).",
+  "mcpName": "com.opensubtitles/mcp-server",
+  "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "mcp-opensubtitles": "dist/index.js",
-    "mcp-opensubtitles-remote": "remote-proxy.js",
-    "mcp-opensubtitles-http": "http-proxy.js",
-    "mcp-server": "dist/index.js"
+    "mcp-server": "dist/index.js",
+    "opensubtitles-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc && node build.js",
-    "watch": "tsc --watch",
-    "dev": "npm run build && MCP_MODE=http PORT=1620 node dist/index.js",
-    "dev:stdio": "npm run build && MCP_MODE=stdio node dist/index.js",
-    "dev:remote": "node remote-proxy.js",
-    "start": "MCP_MODE=http PORT=1620 node dist/index.js",
-    "start:stdio": "MCP_MODE=stdio node dist/index.js",
-    "start:remote": "node remote-proxy.js",
-    "test": "npm run build && npm run test:evals",
-    "test:evals": "npx mcp-eval evals/evals.ts dist/index.js",
-    "inspector": "npm run build && npx @modelcontextprotocol/inspector dist/index.js",
-    "prepublish": "npm run build"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js --http",
+    "start:stdio": "node dist/index.js",
+    "test": "npm run build && vitest run",
+    "test:watch": "vitest",
+    "smoke:inspector": "bash scripts/inspector-smoke.sh",
+    "prepublishOnly": "npm run build",
+    "test:unit": "vitest run"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "subtitles",
     "opensubtitles",
+    "srt",
+    "ai-agent",
     "claude"
   ],
   "author": "OpenSubtitles",
   "license": "MIT",
-  "type": "module",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensubtitles/mcp.opensubtitles.com.git"
+  },
+  "homepage": "https://mcp.opensubtitles.com",
+  "bugs": {
+    "url": "https://github.com/opensubtitles/mcp.opensubtitles.com/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.5",
-    "axios": "^1.11.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "zod": "^3.23.8"
+    "@modelcontextprotocol/server": "^2.4.0",
+    "guessit-js": "^5.2.0",
+    "zod": "^4.2.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/node": "^22.18.1",
-    "typescript": "^5.7.3"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@types/node": "^24.19.2",
+    "typescript": "^6.0.0",
+    "vitest": "^5.1.1"
   }
 }

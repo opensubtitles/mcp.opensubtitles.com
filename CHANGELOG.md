@@ -5,6 +5,62 @@ All notable changes to the OpenSubtitles MCP Server project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-11-22
+
+A rewrite on the MCP TypeScript SDK v2. **Breaking**: see the migration notes below.
+
+### Protocol
+- Implements MCP **2026-07-28** (stateless: no sessions, `server/discover`, per-request `_meta`,
+  `Mcp-Method`/`Mcp-Name` header validation, `resultType`, cache hints) and serves 2025-era clients
+  (`initialize` handshake, 2025-11-25 back to 2024-11-05) statelessly with plain JSON responses.
+  Any replica can serve any request.
+- SDK transports only: no hand-written HTTP framing, no User-Agent switches.
+- stdio and Streamable HTTP from one binary (`npx -y @opensubtitles/mcp-server [--http]`).
+
+### Tools
+- `search_subtitles` rebuilt: structured results with `file_id`s, paging (`page`, `per_page` ≤ 100,
+  `total_count`, `total_pages`), real booleans and enums, `languages` as an array, `filename`
+  parsing with guessit-js, exact-title resolution ("The Matrix" no longer returns *The Matrix
+  Revisited* first) and release-name ranking.
+- New: `get_subtitle_details`, `search_features`, `list_languages`, `guess_filename`, `get_user_info`.
+- `download_subtitle`: format/FPS/time-shift conversion, text or link delivery, remaining quota.
+- `calculate_file_hash`: stdio only.
+- Every tool has `title`, `outputSchema` + `structuredContent`, and `annotations` (including
+  `annotations.title`). Errors the
+  agent can act on are `isError` results with a concrete suggestion; REST 401/403/406/429 map to
+  clear messages with reset times.
+- Resources: search guide, limits and quota rules, languages. Prompts: `find_subtitles_for_file`,
+  `find_subtitles_for_title`, `sync_or_convert`.
+
+### Distribution
+- `plugin.json` and `mcp.json` at the repo root (Agent Plugins 1.0.0), so plugin directories
+  such as cursor.directory detect the server from the GitHub repo: local stdio
+  `npx -y @opensubtitles/mcp-server` and the hosted `https://mcp.opensubtitles.com/mcp`.
+  Not shipped in the npm package.
+
+### Security
+- Credentials are configuration only: env in stdio; `Api-Key`, `X-OpenSubtitles-Token`,
+  `X-OpenSubtitles-Username`/`-Password` headers over HTTP. No tool takes a credential.
+- Logs never contain arguments, headers, tokens or passwords (enforced by tests); client ids are
+  salted hashes.
+- Origin validation (403), strict CORS, request body limit, per-client rate limit, REST timeouts,
+  credentials sent only to opensubtitles.com hosts.
+
+### Removed
+- `/debug`, `/proxy`, the header echo on `GET /mcp`, `mcp-opensubtitles-remote`/`-http` binaries,
+  committed `node_modules/` and `dist/`, the n8n/postgres/qdrant compose file, `deploy.sh`.
+
+### Migration from 1.x
+1. Remove `username`, `password`, `user_api_key` from tool calls; configure credentials in the
+   client instead (README, "Credentials").
+2. Point clients at `https://mcp.opensubtitles.com/mcp`. `/message` and `/json` keep working and
+   answer with a `Deprecation` header; they will be removed in a later 2.x release with notice.
+3. `languages: "en,de"` becomes `["en","de"]`; `machine_translated`/`ai_translated`/
+   `trusted_sources` become `include_machine_translated`/`include_ai_translated`/`trusted_only`
+   booleans; `parent_imdb_id` becomes `imdb_id` with `season_number`/`episode_number`.
+4. Read results from `structuredContent` (the text block is a short summary).
+5. `Authorization: Bearer` from 1.x configs still works; prefer `X-OpenSubtitles-Token`.
+
 ## [1.5.1] - 2026-11-22
 
 Hotfix for the hosted server while 2.0.0 is prepared.

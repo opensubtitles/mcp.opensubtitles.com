@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "opensubtitles": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@opensubtitles/mcp-server"]
+    },
+    "opensubtitles-remote": {
+      "type": "streamable-http",
+      "url": "https://mcp.opensubtitles.com/mcp"
+    }
+  }
+}

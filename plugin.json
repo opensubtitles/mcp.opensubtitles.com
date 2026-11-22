@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "opensubtitles",
+  "version": "2.0.0",
+  "description": "Search, inspect and download subtitles for movies and TV from OpenSubtitles.com.",
+  "author": {
+    "name": "OpenSubtitles",
+    "url": "https://www.opensubtitles.com"
+  },
+  "homepage": "https://mcp.opensubtitles.com",
+  "repository": "https://github.com/opensubtitles/mcp.opensubtitles.com",
+  "license": "MIT",
+  "keywords": ["subtitles", "opensubtitles", "movies", "tv", "srt", "translation", "media", "mcp"]
+}

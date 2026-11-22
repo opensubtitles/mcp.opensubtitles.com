@@ -1,39 +1,24 @@
-# OpenSubtitles MCP Server Dockerfile
-FROM node:18-alpine
-
-# Install development dependencies
-RUN apk add --no-cache git
-
-# Create app directory
+# OpenSubtitles MCP server (Streamable HTTP). Node 24 LTS, clean npm ci build.
+FROM node:24-alpine AS build
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY tsconfig.json tsconfig.build.json ./
+COPY src ./src
+RUN npm run build && npm prune --omit=dev
 
-# Copy package files
-COPY package*.json ./
-
-# Install ALL dependencies (including dev dependencies for development) without running build
-RUN npm install --ignore-scripts
-
-# Create non-root user (but allow file access)
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S mcpserver -u 1001 -G nodejs
-
-# Change ownership of the app directory
-RUN chown -R mcpserver:nodejs /app
-
-# Switch to non-root user
-USER mcpserver
-
-# Expose port
+FROM node:24-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production \
+    MCP_MODE=http \
+    HOST=0.0.0.0 \
+    PORT=1620 \
+    TRUST_PROXY=1
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --chown=node:node package.json LICENSE ./
+USER node
 EXPOSE 1620
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const http = require('http'); const options = { host: 'localhost', port: 1620, path: '/health', timeout: 2000 }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); req.end();"
-
-# Set environment variables
-ENV NODE_ENV=development
-ENV MCP_MODE=http
-ENV PORT=1620
-
-# Development startup - run HTTP server directly
-CMD ["sh", "-c", "npm run build && MCP_MODE=http PORT=1620 node dist/index.js"]
+HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:1620/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "dist/index.js", "--http"]
