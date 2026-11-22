@@ -12,6 +12,7 @@ const HANDSHAKE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const lastHandshakeByIp = new Map();
 // Protocol revision this server implements
 const MCP_PROTOCOL_VERSION = '2025-06-18';
+const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
 const serverVersion = packageJson.version;
@@ -51,7 +52,7 @@ async function dispatchJsonRpcSingle(obj, req) {
         return {
             jsonrpc: '2.0', id: obj.id,
             result: {
-                protocolVersion: requestedProto || MCP_PROTOCOL_VERSION,
+                protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(requestedProto) ? requestedProto : MCP_PROTOCOL_VERSION,
                 capabilities: {
                     tools: { listChanged: true },
                     resources: { subscribe: true, listChanged: true }
@@ -159,9 +160,6 @@ async function handleJsonRpcRequest(req, res) {
             return;
         }
         console.error('STREAMABLE: Handling JSON-RPC request:', Array.isArray(body) ? `batch(${body.length})` : body.method, 'id:', Array.isArray(body) ? 'batch' : body.id);
-        if (!Array.isArray(body)) {
-            console.error('STREAMABLE: Request details - method:', body.method, 'params:', JSON.stringify(body.params));
-        }
         // Batch support
         if (Array.isArray(body)) {
             const results = [];
@@ -345,8 +343,7 @@ async function runHttpMode() {
                 health: '/health',
                 mcp: '/mcp',
                 message: '/message',
-                proxy: '/proxy',
-                debug: '/debug'
+                proxy: '/proxy'
             },
             usage: {
                 'Claude Desktop (stdio)': 'Use stdio mode with npx @opensubtitles/mcp-server',
@@ -354,20 +351,6 @@ async function runHttpMode() {
                 'MCP Clients (Streamable)': 'Connect to /mcp (or /message) for Streamable HTTP transport'
             }
         });
-    });
-    // Debug endpoint for testing JSON responses
-    app.get('/debug', (req, res) => {
-        const userAgent = req.get('User-Agent') || '';
-        const testData = {
-            jsonrpc: '2.0',
-            id: 999,
-            result: {
-                message: 'Debug test response',
-                userAgent: userAgent,
-                timestamp: new Date().toISOString()
-            }
-        };
-        streamResponse(res, testData);
     });
     // HTTP Proxy endpoint for direct tool calls
     app.post('/proxy', async (req, res) => {
@@ -380,7 +363,7 @@ async function runHttpMode() {
                     usage: 'POST {"tool": "search_subtitles", "arguments": {...}}'
                 });
             }
-            console.error('PROXY: Tool call:', tool, 'with args:', args);
+            console.error('PROXY: Tool call:', tool);
             // Create OpenSubtitles server to handle the tool call
             const openSubtitlesServer = createOpenSubtitlesServer();
             // Call the tool using the same pattern as the MCP tools/call method
@@ -388,7 +371,6 @@ async function runHttpMode() {
                 name: tool,
                 arguments: args || {}
             });
-            console.error('PROXY: Tool result:', result);
             // Return the result directly as JSON
             res.json(result);
         }
@@ -402,7 +384,7 @@ async function runHttpMode() {
     });
     // MCP Streamable HTTP endpoint.
     // Raw body middleware, so express.json() cannot consume or reshape the payload.
-    app.all(['/message', '/mcp'], express.raw({ type: '*/*' }), async (req, res) => {
+    app.all(['/message', '/mcp', '/json'], express.raw({ type: '*/*' }), async (req, res) => {
         try {
             console.error('STREAMABLE: Incoming request to', req.path, 'method:', req.method);
             // Handle CORS preflight
@@ -441,8 +423,7 @@ async function runHttpMode() {
                         transport: 'streamable-http',
                         endpoint: req.path,
                         service: 'opensubtitles-mcp-server',
-                        version: serverVersion,
-                        headers: req.headers // Debug info
+                        version: serverVersion
                     }
                 });
                 return;
@@ -575,12 +556,10 @@ async function runHttpMode() {
         console.log(`MCP Streamable endpoint: http://localhost:${port}/mcp`);
         console.log(`MCP Streamable endpoint (alias): http://localhost:${port}/message`);
         console.log(`HTTP Proxy endpoint: http://localhost:${port}/proxy`);
-        console.log(`Debug info: http://localhost:${port}/debug`);
     });
 }
 async function main() {
     console.error("MAIN: Starting main function");
-    console.error("MAIN: Process args:", process.argv);
     console.error("MAIN: Environment MCP_MODE:", process.env.MCP_MODE);
     console.error("MAIN: Environment MCP_TEST_MODE:", process.env.MCP_TEST_MODE);
     console.error("MAIN: stdin.isTTY:", process.stdin.isTTY);

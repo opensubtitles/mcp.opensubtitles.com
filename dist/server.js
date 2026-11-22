@@ -1,6 +1,7 @@
 import { searchSubtitles } from "./tools/search-subtitles.js";
 import { downloadSubtitle } from "./tools/download-subtitle.js";
 import { calculateFileHash } from "./tools/calculate-file-hash.js";
+import { getTransportMode } from "./runtime.js";
 export function createOpenSubtitlesServer() {
     console.error("DEBUG: Creating OpenSubtitles server - defining tools");
     let tools;
@@ -168,8 +169,11 @@ export function createOpenSubtitlesServer() {
     console.error("DEBUG: About to return server object");
     return {
         async getTools() {
-            console.error("DEBUG: getTools() called, returning", tools.length, "tools");
-            return tools;
+            // calculate_file_hash reads a local file. Over HTTP that would be the server's
+            // own disk, so it is offered in stdio mode only.
+            const visible = getTransportMode() === "http" ? tools.filter(t => t.name !== "calculate_file_hash") : tools;
+            console.error("DEBUG: getTools() called, returning", visible.length, "tools");
+            return visible;
         },
         async getResources() {
             console.error("DEBUG: getResources() called");
@@ -183,7 +187,6 @@ export function createOpenSubtitlesServer() {
             ];
         },
         async readResource(params) {
-            console.error("DEBUG: readResource called with:", JSON.stringify(params, null, 2));
             const { uri } = params;
             if (uri === "opensubtitles://guide/intelligent-search") {
                 return {
@@ -311,10 +314,9 @@ This guide enables intelligent, context-aware subtitle searches that provide the
             throw new Error(`Resource not found: ${uri}`);
         },
         async handleToolCall(params) {
-            console.error("DEBUG: handleToolCall called with:", JSON.stringify(params, null, 2));
             const { name, arguments: args } = params;
             try {
-                console.error(`DEBUG: Executing tool ${name} with args:`, JSON.stringify(args, null, 2));
+                console.error(`DEBUG: Executing tool ${name}`);
                 switch (name) {
                     case "search_subtitles":
                         console.error("DEBUG: Calling searchSubtitles");
@@ -323,6 +325,9 @@ This guide enables intelligent, context-aware subtitle searches that provide the
                         console.error("DEBUG: Calling downloadSubtitle");
                         return await downloadSubtitle(args);
                     case "calculate_file_hash":
+                        if (getTransportMode() === "http") {
+                            throw new Error("calculate_file_hash is only available when the server runs locally (stdio mode). Compute the hash on your machine and pass moviehash + moviebytesize to search_subtitles.");
+                        }
                         console.error("DEBUG: Calling calculateFileHash");
                         return await calculateFileHash(args);
                     default:
@@ -333,6 +338,7 @@ This guide enables intelligent, context-aware subtitle searches that provide the
             catch (error) {
                 console.error(`DEBUG: Error executing tool ${name}:`, error);
                 return {
+                    isError: true,
                     content: [
                         {
                             type: "text",

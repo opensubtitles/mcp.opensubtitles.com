@@ -1,59 +1,67 @@
 import { z } from "zod";
 export declare const SubtitleFileSchema: z.ZodObject<{
     file_id: z.ZodNumber;
-    file_name: z.ZodString;
-    cd_number: z.ZodOptional<z.ZodNumber>;
+    file_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+    cd_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
     file_id: number;
     file_name: string;
-    cd_number?: number | undefined;
+    cd_number?: number | null | undefined;
 }, {
     file_id: number;
-    file_name: string;
-    cd_number?: number | undefined;
+    file_name?: string | null | undefined;
+    cd_number?: number | null | undefined;
 }>;
 export declare const SubtitleAttributesSchema: z.ZodObject<{
     subtitle_id: z.ZodString;
     language: z.ZodNullable<z.ZodString>;
-    download_count: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    new_download_count: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+    download_count: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
+    new_download_count: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
     hearing_impaired: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
     hd: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
     fps: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     votes: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodNumber>>>;
-    points: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+    points: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
     ratings: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodNumber>>>;
     from_trusted: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
     foreign_parts_only: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
     ai_translated: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
     machine_translated: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
-    upload_date: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-    release: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+    upload_date: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+    release: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
     comments: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     legacy_subtitle_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     legacy_uploader_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-    nb_cd: z.ZodOptional<z.ZodNumber>;
-    slug: z.ZodOptional<z.ZodString>;
-    uploader: z.ZodDefault<z.ZodOptional<z.ZodObject<{
+    nb_cd: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    slug: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    uploader: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodObject<{
         uploader_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-        name: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-        rank: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+        name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        rank: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
     }, "strip", z.ZodTypeAny, {
         name: string;
         rank: string;
         uploader_id?: number | null | undefined;
     }, {
         uploader_id?: number | null | undefined;
-        name?: string | undefined;
-        rank?: string | undefined;
-    }>>>;
-    feature_details: z.ZodDefault<z.ZodOptional<z.ZodObject<{
-        feature_id: z.ZodOptional<z.ZodNumber>;
-        feature_type: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-        year: z.ZodOptional<z.ZodNumber>;
-        title: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-        movie_name: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-        imdb_id: z.ZodOptional<z.ZodNumber>;
+        name?: string | null | undefined;
+        rank?: string | null | undefined;
+    }>>>, {
+        name: string;
+        rank: string;
+        uploader_id?: number | null | undefined;
+    }, {
+        uploader_id?: number | null | undefined;
+        name?: string | null | undefined;
+        rank?: string | null | undefined;
+    } | null | undefined>;
+    feature_details: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        feature_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        feature_type: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        year: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        title: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        movie_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        imdb_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         tmdb_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         season_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         episode_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
@@ -65,9 +73,9 @@ export declare const SubtitleAttributesSchema: z.ZodObject<{
         feature_type: string;
         title: string;
         movie_name: string;
-        feature_id?: number | undefined;
-        year?: number | undefined;
-        imdb_id?: number | undefined;
+        feature_id?: number | null | undefined;
+        year?: number | null | undefined;
+        imdb_id?: number | null | undefined;
         tmdb_id?: number | null | undefined;
         season_number?: number | null | undefined;
         episode_number?: number | null | undefined;
@@ -76,12 +84,12 @@ export declare const SubtitleAttributesSchema: z.ZodObject<{
         parent_tmdb_id?: number | null | undefined;
         parent_feature_id?: number | null | undefined;
     }, {
-        feature_id?: number | undefined;
-        feature_type?: string | undefined;
-        year?: number | undefined;
-        title?: string | undefined;
-        movie_name?: string | undefined;
-        imdb_id?: number | undefined;
+        feature_id?: number | null | undefined;
+        feature_type?: string | null | undefined;
+        year?: number | null | undefined;
+        title?: string | null | undefined;
+        movie_name?: string | null | undefined;
+        imdb_id?: number | null | undefined;
         tmdb_id?: number | null | undefined;
         season_number?: number | null | undefined;
         episode_number?: number | null | undefined;
@@ -89,22 +97,58 @@ export declare const SubtitleAttributesSchema: z.ZodObject<{
         parent_title?: string | null | undefined;
         parent_tmdb_id?: number | null | undefined;
         parent_feature_id?: number | null | undefined;
-    }>>>;
-    url: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-    related_links: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodAny, "many">>>;
-    files: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodObject<{
+    }>>>, Partial<{
+        feature_id: number | null;
+        feature_type: string;
+        year: number | null;
+        title: string;
+        movie_name: string;
+        imdb_id: number | null;
+        tmdb_id: number | null;
+        season_number: number | null;
+        episode_number: number | null;
+        parent_imdb_id: number | null;
+        parent_title: string | null;
+        parent_tmdb_id: number | null;
+        parent_feature_id: number | null;
+    }>, {
+        feature_id?: number | null | undefined;
+        feature_type?: string | null | undefined;
+        year?: number | null | undefined;
+        title?: string | null | undefined;
+        movie_name?: string | null | undefined;
+        imdb_id?: number | null | undefined;
+        tmdb_id?: number | null | undefined;
+        season_number?: number | null | undefined;
+        episode_number?: number | null | undefined;
+        parent_imdb_id?: number | null | undefined;
+        parent_title?: string | null | undefined;
+        parent_tmdb_id?: number | null | undefined;
+        parent_feature_id?: number | null | undefined;
+    } | null | undefined>;
+    url: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+    related_links: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodAny, "many">>>, any[], any[] | null | undefined>;
+    files: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodObject<{
         file_id: z.ZodNumber;
-        file_name: z.ZodString;
-        cd_number: z.ZodOptional<z.ZodNumber>;
+        file_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        cd_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     }, "strip", z.ZodTypeAny, {
         file_id: number;
         file_name: string;
-        cd_number?: number | undefined;
+        cd_number?: number | null | undefined;
     }, {
         file_id: number;
+        file_name?: string | null | undefined;
+        cd_number?: number | null | undefined;
+    }>, "many">>>, {
+        file_id: number;
         file_name: string;
-        cd_number?: number | undefined;
-    }>, "many">>>;
+        cd_number?: number | null | undefined;
+    }[], {
+        file_id: number;
+        file_name?: string | null | undefined;
+        cd_number?: number | null | undefined;
+    }[] | null | undefined>;
 }, "strip", z.ZodTypeAny, {
     subtitle_id: string;
     language: string | null;
@@ -127,67 +171,67 @@ export declare const SubtitleAttributesSchema: z.ZodObject<{
         rank: string;
         uploader_id?: number | null | undefined;
     };
-    feature_details: {
+    feature_details: Partial<{
+        feature_id: number | null;
         feature_type: string;
+        year: number | null;
         title: string;
         movie_name: string;
-        feature_id?: number | undefined;
-        year?: number | undefined;
-        imdb_id?: number | undefined;
-        tmdb_id?: number | null | undefined;
-        season_number?: number | null | undefined;
-        episode_number?: number | null | undefined;
-        parent_imdb_id?: number | null | undefined;
-        parent_title?: string | null | undefined;
-        parent_tmdb_id?: number | null | undefined;
-        parent_feature_id?: number | null | undefined;
-    };
+        imdb_id: number | null;
+        tmdb_id: number | null;
+        season_number: number | null;
+        episode_number: number | null;
+        parent_imdb_id: number | null;
+        parent_title: string | null;
+        parent_tmdb_id: number | null;
+        parent_feature_id: number | null;
+    }>;
     url: string;
     related_links: any[];
     files: {
         file_id: number;
         file_name: string;
-        cd_number?: number | undefined;
+        cd_number?: number | null | undefined;
     }[];
     fps?: number | null | undefined;
     legacy_subtitle_id?: number | null | undefined;
     legacy_uploader_id?: number | null | undefined;
-    nb_cd?: number | undefined;
-    slug?: string | undefined;
+    nb_cd?: number | null | undefined;
+    slug?: string | null | undefined;
 }, {
     subtitle_id: string;
     language: string | null;
-    download_count?: number | undefined;
-    new_download_count?: number | undefined;
+    download_count?: number | null | undefined;
+    new_download_count?: number | null | undefined;
     hearing_impaired?: boolean | null | undefined;
     hd?: boolean | null | undefined;
     fps?: number | null | undefined;
     votes?: number | null | undefined;
-    points?: number | undefined;
+    points?: number | null | undefined;
     ratings?: number | null | undefined;
     from_trusted?: boolean | null | undefined;
     foreign_parts_only?: boolean | null | undefined;
     ai_translated?: boolean | null | undefined;
     machine_translated?: boolean | null | undefined;
-    upload_date?: string | undefined;
-    release?: string | undefined;
+    upload_date?: string | null | undefined;
+    release?: string | null | undefined;
     comments?: string | null | undefined;
     legacy_subtitle_id?: number | null | undefined;
     legacy_uploader_id?: number | null | undefined;
-    nb_cd?: number | undefined;
-    slug?: string | undefined;
+    nb_cd?: number | null | undefined;
+    slug?: string | null | undefined;
     uploader?: {
         uploader_id?: number | null | undefined;
-        name?: string | undefined;
-        rank?: string | undefined;
-    } | undefined;
+        name?: string | null | undefined;
+        rank?: string | null | undefined;
+    } | null | undefined;
     feature_details?: {
-        feature_id?: number | undefined;
-        feature_type?: string | undefined;
-        year?: number | undefined;
-        title?: string | undefined;
-        movie_name?: string | undefined;
-        imdb_id?: number | undefined;
+        feature_id?: number | null | undefined;
+        feature_type?: string | null | undefined;
+        year?: number | null | undefined;
+        title?: string | null | undefined;
+        movie_name?: string | null | undefined;
+        imdb_id?: number | null | undefined;
         tmdb_id?: number | null | undefined;
         season_number?: number | null | undefined;
         episode_number?: number | null | undefined;
@@ -195,14 +239,14 @@ export declare const SubtitleAttributesSchema: z.ZodObject<{
         parent_title?: string | null | undefined;
         parent_tmdb_id?: number | null | undefined;
         parent_feature_id?: number | null | undefined;
-    } | undefined;
-    url?: string | undefined;
-    related_links?: any[] | undefined;
+    } | null | undefined;
+    url?: string | null | undefined;
+    related_links?: any[] | null | undefined;
     files?: {
         file_id: number;
-        file_name: string;
-        cd_number?: number | undefined;
-    }[] | undefined;
+        file_name?: string | null | undefined;
+        cd_number?: number | null | undefined;
+    }[] | null | undefined;
 }>;
 export declare const SubtitleSchema: z.ZodObject<{
     id: z.ZodString;
@@ -210,45 +254,53 @@ export declare const SubtitleSchema: z.ZodObject<{
     attributes: z.ZodObject<{
         subtitle_id: z.ZodString;
         language: z.ZodNullable<z.ZodString>;
-        download_count: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-        new_download_count: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+        download_count: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
+        new_download_count: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
         hearing_impaired: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
         hd: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
         fps: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         votes: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodNumber>>>;
-        points: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+        points: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
         ratings: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodNumber>>>;
         from_trusted: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
         foreign_parts_only: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
         ai_translated: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
         machine_translated: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
-        upload_date: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-        release: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+        upload_date: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        release: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
         comments: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
         legacy_subtitle_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         legacy_uploader_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-        nb_cd: z.ZodOptional<z.ZodNumber>;
-        slug: z.ZodOptional<z.ZodString>;
-        uploader: z.ZodDefault<z.ZodOptional<z.ZodObject<{
+        nb_cd: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        slug: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        uploader: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodObject<{
             uploader_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-            name: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-            rank: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+            name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            rank: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
         }, "strip", z.ZodTypeAny, {
             name: string;
             rank: string;
             uploader_id?: number | null | undefined;
         }, {
             uploader_id?: number | null | undefined;
-            name?: string | undefined;
-            rank?: string | undefined;
-        }>>>;
-        feature_details: z.ZodDefault<z.ZodOptional<z.ZodObject<{
-            feature_id: z.ZodOptional<z.ZodNumber>;
-            feature_type: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-            year: z.ZodOptional<z.ZodNumber>;
-            title: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-            movie_name: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-            imdb_id: z.ZodOptional<z.ZodNumber>;
+            name?: string | null | undefined;
+            rank?: string | null | undefined;
+        }>>>, {
+            name: string;
+            rank: string;
+            uploader_id?: number | null | undefined;
+        }, {
+            uploader_id?: number | null | undefined;
+            name?: string | null | undefined;
+            rank?: string | null | undefined;
+        } | null | undefined>;
+        feature_details: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            feature_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            feature_type: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            year: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            title: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            movie_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            imdb_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
             tmdb_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
             season_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
             episode_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
@@ -260,9 +312,9 @@ export declare const SubtitleSchema: z.ZodObject<{
             feature_type: string;
             title: string;
             movie_name: string;
-            feature_id?: number | undefined;
-            year?: number | undefined;
-            imdb_id?: number | undefined;
+            feature_id?: number | null | undefined;
+            year?: number | null | undefined;
+            imdb_id?: number | null | undefined;
             tmdb_id?: number | null | undefined;
             season_number?: number | null | undefined;
             episode_number?: number | null | undefined;
@@ -271,12 +323,12 @@ export declare const SubtitleSchema: z.ZodObject<{
             parent_tmdb_id?: number | null | undefined;
             parent_feature_id?: number | null | undefined;
         }, {
-            feature_id?: number | undefined;
-            feature_type?: string | undefined;
-            year?: number | undefined;
-            title?: string | undefined;
-            movie_name?: string | undefined;
-            imdb_id?: number | undefined;
+            feature_id?: number | null | undefined;
+            feature_type?: string | null | undefined;
+            year?: number | null | undefined;
+            title?: string | null | undefined;
+            movie_name?: string | null | undefined;
+            imdb_id?: number | null | undefined;
             tmdb_id?: number | null | undefined;
             season_number?: number | null | undefined;
             episode_number?: number | null | undefined;
@@ -284,22 +336,58 @@ export declare const SubtitleSchema: z.ZodObject<{
             parent_title?: string | null | undefined;
             parent_tmdb_id?: number | null | undefined;
             parent_feature_id?: number | null | undefined;
-        }>>>;
-        url: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-        related_links: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodAny, "many">>>;
-        files: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodObject<{
+        }>>>, Partial<{
+            feature_id: number | null;
+            feature_type: string;
+            year: number | null;
+            title: string;
+            movie_name: string;
+            imdb_id: number | null;
+            tmdb_id: number | null;
+            season_number: number | null;
+            episode_number: number | null;
+            parent_imdb_id: number | null;
+            parent_title: string | null;
+            parent_tmdb_id: number | null;
+            parent_feature_id: number | null;
+        }>, {
+            feature_id?: number | null | undefined;
+            feature_type?: string | null | undefined;
+            year?: number | null | undefined;
+            title?: string | null | undefined;
+            movie_name?: string | null | undefined;
+            imdb_id?: number | null | undefined;
+            tmdb_id?: number | null | undefined;
+            season_number?: number | null | undefined;
+            episode_number?: number | null | undefined;
+            parent_imdb_id?: number | null | undefined;
+            parent_title?: string | null | undefined;
+            parent_tmdb_id?: number | null | undefined;
+            parent_feature_id?: number | null | undefined;
+        } | null | undefined>;
+        url: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+        related_links: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodAny, "many">>>, any[], any[] | null | undefined>;
+        files: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodObject<{
             file_id: z.ZodNumber;
-            file_name: z.ZodString;
-            cd_number: z.ZodOptional<z.ZodNumber>;
+            file_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            cd_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         }, "strip", z.ZodTypeAny, {
             file_id: number;
             file_name: string;
-            cd_number?: number | undefined;
+            cd_number?: number | null | undefined;
         }, {
             file_id: number;
+            file_name?: string | null | undefined;
+            cd_number?: number | null | undefined;
+        }>, "many">>>, {
+            file_id: number;
             file_name: string;
-            cd_number?: number | undefined;
-        }>, "many">>>;
+            cd_number?: number | null | undefined;
+        }[], {
+            file_id: number;
+            file_name?: string | null | undefined;
+            cd_number?: number | null | undefined;
+        }[] | null | undefined>;
     }, "strip", z.ZodTypeAny, {
         subtitle_id: string;
         language: string | null;
@@ -322,67 +410,67 @@ export declare const SubtitleSchema: z.ZodObject<{
             rank: string;
             uploader_id?: number | null | undefined;
         };
-        feature_details: {
+        feature_details: Partial<{
+            feature_id: number | null;
             feature_type: string;
+            year: number | null;
             title: string;
             movie_name: string;
-            feature_id?: number | undefined;
-            year?: number | undefined;
-            imdb_id?: number | undefined;
-            tmdb_id?: number | null | undefined;
-            season_number?: number | null | undefined;
-            episode_number?: number | null | undefined;
-            parent_imdb_id?: number | null | undefined;
-            parent_title?: string | null | undefined;
-            parent_tmdb_id?: number | null | undefined;
-            parent_feature_id?: number | null | undefined;
-        };
+            imdb_id: number | null;
+            tmdb_id: number | null;
+            season_number: number | null;
+            episode_number: number | null;
+            parent_imdb_id: number | null;
+            parent_title: string | null;
+            parent_tmdb_id: number | null;
+            parent_feature_id: number | null;
+        }>;
         url: string;
         related_links: any[];
         files: {
             file_id: number;
             file_name: string;
-            cd_number?: number | undefined;
+            cd_number?: number | null | undefined;
         }[];
         fps?: number | null | undefined;
         legacy_subtitle_id?: number | null | undefined;
         legacy_uploader_id?: number | null | undefined;
-        nb_cd?: number | undefined;
-        slug?: string | undefined;
+        nb_cd?: number | null | undefined;
+        slug?: string | null | undefined;
     }, {
         subtitle_id: string;
         language: string | null;
-        download_count?: number | undefined;
-        new_download_count?: number | undefined;
+        download_count?: number | null | undefined;
+        new_download_count?: number | null | undefined;
         hearing_impaired?: boolean | null | undefined;
         hd?: boolean | null | undefined;
         fps?: number | null | undefined;
         votes?: number | null | undefined;
-        points?: number | undefined;
+        points?: number | null | undefined;
         ratings?: number | null | undefined;
         from_trusted?: boolean | null | undefined;
         foreign_parts_only?: boolean | null | undefined;
         ai_translated?: boolean | null | undefined;
         machine_translated?: boolean | null | undefined;
-        upload_date?: string | undefined;
-        release?: string | undefined;
+        upload_date?: string | null | undefined;
+        release?: string | null | undefined;
         comments?: string | null | undefined;
         legacy_subtitle_id?: number | null | undefined;
         legacy_uploader_id?: number | null | undefined;
-        nb_cd?: number | undefined;
-        slug?: string | undefined;
+        nb_cd?: number | null | undefined;
+        slug?: string | null | undefined;
         uploader?: {
             uploader_id?: number | null | undefined;
-            name?: string | undefined;
-            rank?: string | undefined;
-        } | undefined;
+            name?: string | null | undefined;
+            rank?: string | null | undefined;
+        } | null | undefined;
         feature_details?: {
-            feature_id?: number | undefined;
-            feature_type?: string | undefined;
-            year?: number | undefined;
-            title?: string | undefined;
-            movie_name?: string | undefined;
-            imdb_id?: number | undefined;
+            feature_id?: number | null | undefined;
+            feature_type?: string | null | undefined;
+            year?: number | null | undefined;
+            title?: string | null | undefined;
+            movie_name?: string | null | undefined;
+            imdb_id?: number | null | undefined;
             tmdb_id?: number | null | undefined;
             season_number?: number | null | undefined;
             episode_number?: number | null | undefined;
@@ -390,14 +478,14 @@ export declare const SubtitleSchema: z.ZodObject<{
             parent_title?: string | null | undefined;
             parent_tmdb_id?: number | null | undefined;
             parent_feature_id?: number | null | undefined;
-        } | undefined;
-        url?: string | undefined;
-        related_links?: any[] | undefined;
+        } | null | undefined;
+        url?: string | null | undefined;
+        related_links?: any[] | null | undefined;
         files?: {
             file_id: number;
-            file_name: string;
-            cd_number?: number | undefined;
-        }[] | undefined;
+            file_name?: string | null | undefined;
+            cd_number?: number | null | undefined;
+        }[] | null | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
     type: string;
@@ -424,33 +512,33 @@ export declare const SubtitleSchema: z.ZodObject<{
             rank: string;
             uploader_id?: number | null | undefined;
         };
-        feature_details: {
+        feature_details: Partial<{
+            feature_id: number | null;
             feature_type: string;
+            year: number | null;
             title: string;
             movie_name: string;
-            feature_id?: number | undefined;
-            year?: number | undefined;
-            imdb_id?: number | undefined;
-            tmdb_id?: number | null | undefined;
-            season_number?: number | null | undefined;
-            episode_number?: number | null | undefined;
-            parent_imdb_id?: number | null | undefined;
-            parent_title?: string | null | undefined;
-            parent_tmdb_id?: number | null | undefined;
-            parent_feature_id?: number | null | undefined;
-        };
+            imdb_id: number | null;
+            tmdb_id: number | null;
+            season_number: number | null;
+            episode_number: number | null;
+            parent_imdb_id: number | null;
+            parent_title: string | null;
+            parent_tmdb_id: number | null;
+            parent_feature_id: number | null;
+        }>;
         url: string;
         related_links: any[];
         files: {
             file_id: number;
             file_name: string;
-            cd_number?: number | undefined;
+            cd_number?: number | null | undefined;
         }[];
         fps?: number | null | undefined;
         legacy_subtitle_id?: number | null | undefined;
         legacy_uploader_id?: number | null | undefined;
-        nb_cd?: number | undefined;
-        slug?: string | undefined;
+        nb_cd?: number | null | undefined;
+        slug?: string | null | undefined;
     };
 }, {
     type: string;
@@ -458,37 +546,37 @@ export declare const SubtitleSchema: z.ZodObject<{
     attributes: {
         subtitle_id: string;
         language: string | null;
-        download_count?: number | undefined;
-        new_download_count?: number | undefined;
+        download_count?: number | null | undefined;
+        new_download_count?: number | null | undefined;
         hearing_impaired?: boolean | null | undefined;
         hd?: boolean | null | undefined;
         fps?: number | null | undefined;
         votes?: number | null | undefined;
-        points?: number | undefined;
+        points?: number | null | undefined;
         ratings?: number | null | undefined;
         from_trusted?: boolean | null | undefined;
         foreign_parts_only?: boolean | null | undefined;
         ai_translated?: boolean | null | undefined;
         machine_translated?: boolean | null | undefined;
-        upload_date?: string | undefined;
-        release?: string | undefined;
+        upload_date?: string | null | undefined;
+        release?: string | null | undefined;
         comments?: string | null | undefined;
         legacy_subtitle_id?: number | null | undefined;
         legacy_uploader_id?: number | null | undefined;
-        nb_cd?: number | undefined;
-        slug?: string | undefined;
+        nb_cd?: number | null | undefined;
+        slug?: string | null | undefined;
         uploader?: {
             uploader_id?: number | null | undefined;
-            name?: string | undefined;
-            rank?: string | undefined;
-        } | undefined;
+            name?: string | null | undefined;
+            rank?: string | null | undefined;
+        } | null | undefined;
         feature_details?: {
-            feature_id?: number | undefined;
-            feature_type?: string | undefined;
-            year?: number | undefined;
-            title?: string | undefined;
-            movie_name?: string | undefined;
-            imdb_id?: number | undefined;
+            feature_id?: number | null | undefined;
+            feature_type?: string | null | undefined;
+            year?: number | null | undefined;
+            title?: string | null | undefined;
+            movie_name?: string | null | undefined;
+            imdb_id?: number | null | undefined;
             tmdb_id?: number | null | undefined;
             season_number?: number | null | undefined;
             episode_number?: number | null | undefined;
@@ -496,14 +584,14 @@ export declare const SubtitleSchema: z.ZodObject<{
             parent_title?: string | null | undefined;
             parent_tmdb_id?: number | null | undefined;
             parent_feature_id?: number | null | undefined;
-        } | undefined;
-        url?: string | undefined;
-        related_links?: any[] | undefined;
+        } | null | undefined;
+        url?: string | null | undefined;
+        related_links?: any[] | null | undefined;
         files?: {
             file_id: number;
-            file_name: string;
-            cd_number?: number | undefined;
-        }[] | undefined;
+            file_name?: string | null | undefined;
+            cd_number?: number | null | undefined;
+        }[] | null | undefined;
     };
 }>;
 export declare const SearchResponseSchema: z.ZodObject<{
@@ -517,45 +605,53 @@ export declare const SearchResponseSchema: z.ZodObject<{
         attributes: z.ZodObject<{
             subtitle_id: z.ZodString;
             language: z.ZodNullable<z.ZodString>;
-            download_count: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-            new_download_count: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+            download_count: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
+            new_download_count: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
             hearing_impaired: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
             hd: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
             fps: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
             votes: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodNumber>>>;
-            points: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+            points: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodNumber>>, number, number | null | undefined>;
             ratings: z.ZodDefault<z.ZodNullable<z.ZodOptional<z.ZodNumber>>>;
             from_trusted: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
             foreign_parts_only: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
             ai_translated: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
             machine_translated: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodBoolean>>>;
-            upload_date: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-            release: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+            upload_date: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            release: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
             comments: z.ZodDefault<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
             legacy_subtitle_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
             legacy_uploader_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-            nb_cd: z.ZodOptional<z.ZodNumber>;
-            slug: z.ZodOptional<z.ZodString>;
-            uploader: z.ZodDefault<z.ZodOptional<z.ZodObject<{
+            nb_cd: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            slug: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            uploader: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodObject<{
                 uploader_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-                name: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-                rank: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+                name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+                rank: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
             }, "strip", z.ZodTypeAny, {
                 name: string;
                 rank: string;
                 uploader_id?: number | null | undefined;
             }, {
                 uploader_id?: number | null | undefined;
-                name?: string | undefined;
-                rank?: string | undefined;
-            }>>>;
-            feature_details: z.ZodDefault<z.ZodOptional<z.ZodObject<{
-                feature_id: z.ZodOptional<z.ZodNumber>;
-                feature_type: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-                year: z.ZodOptional<z.ZodNumber>;
-                title: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-                movie_name: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-                imdb_id: z.ZodOptional<z.ZodNumber>;
+                name?: string | null | undefined;
+                rank?: string | null | undefined;
+            }>>>, {
+                name: string;
+                rank: string;
+                uploader_id?: number | null | undefined;
+            }, {
+                uploader_id?: number | null | undefined;
+                name?: string | null | undefined;
+                rank?: string | null | undefined;
+            } | null | undefined>;
+            feature_details: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodObject<{
+                feature_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                feature_type: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+                year: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                title: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+                movie_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+                imdb_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
                 tmdb_id: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
                 season_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
                 episode_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
@@ -567,9 +663,9 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 feature_type: string;
                 title: string;
                 movie_name: string;
-                feature_id?: number | undefined;
-                year?: number | undefined;
-                imdb_id?: number | undefined;
+                feature_id?: number | null | undefined;
+                year?: number | null | undefined;
+                imdb_id?: number | null | undefined;
                 tmdb_id?: number | null | undefined;
                 season_number?: number | null | undefined;
                 episode_number?: number | null | undefined;
@@ -578,12 +674,12 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 parent_tmdb_id?: number | null | undefined;
                 parent_feature_id?: number | null | undefined;
             }, {
-                feature_id?: number | undefined;
-                feature_type?: string | undefined;
-                year?: number | undefined;
-                title?: string | undefined;
-                movie_name?: string | undefined;
-                imdb_id?: number | undefined;
+                feature_id?: number | null | undefined;
+                feature_type?: string | null | undefined;
+                year?: number | null | undefined;
+                title?: string | null | undefined;
+                movie_name?: string | null | undefined;
+                imdb_id?: number | null | undefined;
                 tmdb_id?: number | null | undefined;
                 season_number?: number | null | undefined;
                 episode_number?: number | null | undefined;
@@ -591,22 +687,58 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 parent_title?: string | null | undefined;
                 parent_tmdb_id?: number | null | undefined;
                 parent_feature_id?: number | null | undefined;
-            }>>>;
-            url: z.ZodDefault<z.ZodOptional<z.ZodString>>;
-            related_links: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodAny, "many">>>;
-            files: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodObject<{
+            }>>>, Partial<{
+                feature_id: number | null;
+                feature_type: string;
+                year: number | null;
+                title: string;
+                movie_name: string;
+                imdb_id: number | null;
+                tmdb_id: number | null;
+                season_number: number | null;
+                episode_number: number | null;
+                parent_imdb_id: number | null;
+                parent_title: string | null;
+                parent_tmdb_id: number | null;
+                parent_feature_id: number | null;
+            }>, {
+                feature_id?: number | null | undefined;
+                feature_type?: string | null | undefined;
+                year?: number | null | undefined;
+                title?: string | null | undefined;
+                movie_name?: string | null | undefined;
+                imdb_id?: number | null | undefined;
+                tmdb_id?: number | null | undefined;
+                season_number?: number | null | undefined;
+                episode_number?: number | null | undefined;
+                parent_imdb_id?: number | null | undefined;
+                parent_title?: string | null | undefined;
+                parent_tmdb_id?: number | null | undefined;
+                parent_feature_id?: number | null | undefined;
+            } | null | undefined>;
+            url: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+            related_links: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodAny, "many">>>, any[], any[] | null | undefined>;
+            files: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodObject<{
                 file_id: z.ZodNumber;
-                file_name: z.ZodString;
-                cd_number: z.ZodOptional<z.ZodNumber>;
+                file_name: z.ZodEffects<z.ZodOptional<z.ZodNullable<z.ZodString>>, string, string | null | undefined>;
+                cd_number: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
             }, "strip", z.ZodTypeAny, {
                 file_id: number;
                 file_name: string;
-                cd_number?: number | undefined;
+                cd_number?: number | null | undefined;
             }, {
                 file_id: number;
+                file_name?: string | null | undefined;
+                cd_number?: number | null | undefined;
+            }>, "many">>>, {
+                file_id: number;
                 file_name: string;
-                cd_number?: number | undefined;
-            }>, "many">>>;
+                cd_number?: number | null | undefined;
+            }[], {
+                file_id: number;
+                file_name?: string | null | undefined;
+                cd_number?: number | null | undefined;
+            }[] | null | undefined>;
         }, "strip", z.ZodTypeAny, {
             subtitle_id: string;
             language: string | null;
@@ -629,67 +761,67 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 rank: string;
                 uploader_id?: number | null | undefined;
             };
-            feature_details: {
+            feature_details: Partial<{
+                feature_id: number | null;
                 feature_type: string;
+                year: number | null;
                 title: string;
                 movie_name: string;
-                feature_id?: number | undefined;
-                year?: number | undefined;
-                imdb_id?: number | undefined;
-                tmdb_id?: number | null | undefined;
-                season_number?: number | null | undefined;
-                episode_number?: number | null | undefined;
-                parent_imdb_id?: number | null | undefined;
-                parent_title?: string | null | undefined;
-                parent_tmdb_id?: number | null | undefined;
-                parent_feature_id?: number | null | undefined;
-            };
+                imdb_id: number | null;
+                tmdb_id: number | null;
+                season_number: number | null;
+                episode_number: number | null;
+                parent_imdb_id: number | null;
+                parent_title: string | null;
+                parent_tmdb_id: number | null;
+                parent_feature_id: number | null;
+            }>;
             url: string;
             related_links: any[];
             files: {
                 file_id: number;
                 file_name: string;
-                cd_number?: number | undefined;
+                cd_number?: number | null | undefined;
             }[];
             fps?: number | null | undefined;
             legacy_subtitle_id?: number | null | undefined;
             legacy_uploader_id?: number | null | undefined;
-            nb_cd?: number | undefined;
-            slug?: string | undefined;
+            nb_cd?: number | null | undefined;
+            slug?: string | null | undefined;
         }, {
             subtitle_id: string;
             language: string | null;
-            download_count?: number | undefined;
-            new_download_count?: number | undefined;
+            download_count?: number | null | undefined;
+            new_download_count?: number | null | undefined;
             hearing_impaired?: boolean | null | undefined;
             hd?: boolean | null | undefined;
             fps?: number | null | undefined;
             votes?: number | null | undefined;
-            points?: number | undefined;
+            points?: number | null | undefined;
             ratings?: number | null | undefined;
             from_trusted?: boolean | null | undefined;
             foreign_parts_only?: boolean | null | undefined;
             ai_translated?: boolean | null | undefined;
             machine_translated?: boolean | null | undefined;
-            upload_date?: string | undefined;
-            release?: string | undefined;
+            upload_date?: string | null | undefined;
+            release?: string | null | undefined;
             comments?: string | null | undefined;
             legacy_subtitle_id?: number | null | undefined;
             legacy_uploader_id?: number | null | undefined;
-            nb_cd?: number | undefined;
-            slug?: string | undefined;
+            nb_cd?: number | null | undefined;
+            slug?: string | null | undefined;
             uploader?: {
                 uploader_id?: number | null | undefined;
-                name?: string | undefined;
-                rank?: string | undefined;
-            } | undefined;
+                name?: string | null | undefined;
+                rank?: string | null | undefined;
+            } | null | undefined;
             feature_details?: {
-                feature_id?: number | undefined;
-                feature_type?: string | undefined;
-                year?: number | undefined;
-                title?: string | undefined;
-                movie_name?: string | undefined;
-                imdb_id?: number | undefined;
+                feature_id?: number | null | undefined;
+                feature_type?: string | null | undefined;
+                year?: number | null | undefined;
+                title?: string | null | undefined;
+                movie_name?: string | null | undefined;
+                imdb_id?: number | null | undefined;
                 tmdb_id?: number | null | undefined;
                 season_number?: number | null | undefined;
                 episode_number?: number | null | undefined;
@@ -697,14 +829,14 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 parent_title?: string | null | undefined;
                 parent_tmdb_id?: number | null | undefined;
                 parent_feature_id?: number | null | undefined;
-            } | undefined;
-            url?: string | undefined;
-            related_links?: any[] | undefined;
+            } | null | undefined;
+            url?: string | null | undefined;
+            related_links?: any[] | null | undefined;
             files?: {
                 file_id: number;
-                file_name: string;
-                cd_number?: number | undefined;
-            }[] | undefined;
+                file_name?: string | null | undefined;
+                cd_number?: number | null | undefined;
+            }[] | null | undefined;
         }>;
     }, "strip", z.ZodTypeAny, {
         type: string;
@@ -731,33 +863,33 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 rank: string;
                 uploader_id?: number | null | undefined;
             };
-            feature_details: {
+            feature_details: Partial<{
+                feature_id: number | null;
                 feature_type: string;
+                year: number | null;
                 title: string;
                 movie_name: string;
-                feature_id?: number | undefined;
-                year?: number | undefined;
-                imdb_id?: number | undefined;
-                tmdb_id?: number | null | undefined;
-                season_number?: number | null | undefined;
-                episode_number?: number | null | undefined;
-                parent_imdb_id?: number | null | undefined;
-                parent_title?: string | null | undefined;
-                parent_tmdb_id?: number | null | undefined;
-                parent_feature_id?: number | null | undefined;
-            };
+                imdb_id: number | null;
+                tmdb_id: number | null;
+                season_number: number | null;
+                episode_number: number | null;
+                parent_imdb_id: number | null;
+                parent_title: string | null;
+                parent_tmdb_id: number | null;
+                parent_feature_id: number | null;
+            }>;
             url: string;
             related_links: any[];
             files: {
                 file_id: number;
                 file_name: string;
-                cd_number?: number | undefined;
+                cd_number?: number | null | undefined;
             }[];
             fps?: number | null | undefined;
             legacy_subtitle_id?: number | null | undefined;
             legacy_uploader_id?: number | null | undefined;
-            nb_cd?: number | undefined;
-            slug?: string | undefined;
+            nb_cd?: number | null | undefined;
+            slug?: string | null | undefined;
         };
     }, {
         type: string;
@@ -765,37 +897,37 @@ export declare const SearchResponseSchema: z.ZodObject<{
         attributes: {
             subtitle_id: string;
             language: string | null;
-            download_count?: number | undefined;
-            new_download_count?: number | undefined;
+            download_count?: number | null | undefined;
+            new_download_count?: number | null | undefined;
             hearing_impaired?: boolean | null | undefined;
             hd?: boolean | null | undefined;
             fps?: number | null | undefined;
             votes?: number | null | undefined;
-            points?: number | undefined;
+            points?: number | null | undefined;
             ratings?: number | null | undefined;
             from_trusted?: boolean | null | undefined;
             foreign_parts_only?: boolean | null | undefined;
             ai_translated?: boolean | null | undefined;
             machine_translated?: boolean | null | undefined;
-            upload_date?: string | undefined;
-            release?: string | undefined;
+            upload_date?: string | null | undefined;
+            release?: string | null | undefined;
             comments?: string | null | undefined;
             legacy_subtitle_id?: number | null | undefined;
             legacy_uploader_id?: number | null | undefined;
-            nb_cd?: number | undefined;
-            slug?: string | undefined;
+            nb_cd?: number | null | undefined;
+            slug?: string | null | undefined;
             uploader?: {
                 uploader_id?: number | null | undefined;
-                name?: string | undefined;
-                rank?: string | undefined;
-            } | undefined;
+                name?: string | null | undefined;
+                rank?: string | null | undefined;
+            } | null | undefined;
             feature_details?: {
-                feature_id?: number | undefined;
-                feature_type?: string | undefined;
-                year?: number | undefined;
-                title?: string | undefined;
-                movie_name?: string | undefined;
-                imdb_id?: number | undefined;
+                feature_id?: number | null | undefined;
+                feature_type?: string | null | undefined;
+                year?: number | null | undefined;
+                title?: string | null | undefined;
+                movie_name?: string | null | undefined;
+                imdb_id?: number | null | undefined;
                 tmdb_id?: number | null | undefined;
                 season_number?: number | null | undefined;
                 episode_number?: number | null | undefined;
@@ -803,14 +935,14 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 parent_title?: string | null | undefined;
                 parent_tmdb_id?: number | null | undefined;
                 parent_feature_id?: number | null | undefined;
-            } | undefined;
-            url?: string | undefined;
-            related_links?: any[] | undefined;
+            } | null | undefined;
+            url?: string | null | undefined;
+            related_links?: any[] | null | undefined;
             files?: {
                 file_id: number;
-                file_name: string;
-                cd_number?: number | undefined;
-            }[] | undefined;
+                file_name?: string | null | undefined;
+                cd_number?: number | null | undefined;
+            }[] | null | undefined;
         };
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
@@ -843,33 +975,33 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 rank: string;
                 uploader_id?: number | null | undefined;
             };
-            feature_details: {
+            feature_details: Partial<{
+                feature_id: number | null;
                 feature_type: string;
+                year: number | null;
                 title: string;
                 movie_name: string;
-                feature_id?: number | undefined;
-                year?: number | undefined;
-                imdb_id?: number | undefined;
-                tmdb_id?: number | null | undefined;
-                season_number?: number | null | undefined;
-                episode_number?: number | null | undefined;
-                parent_imdb_id?: number | null | undefined;
-                parent_title?: string | null | undefined;
-                parent_tmdb_id?: number | null | undefined;
-                parent_feature_id?: number | null | undefined;
-            };
+                imdb_id: number | null;
+                tmdb_id: number | null;
+                season_number: number | null;
+                episode_number: number | null;
+                parent_imdb_id: number | null;
+                parent_title: string | null;
+                parent_tmdb_id: number | null;
+                parent_feature_id: number | null;
+            }>;
             url: string;
             related_links: any[];
             files: {
                 file_id: number;
                 file_name: string;
-                cd_number?: number | undefined;
+                cd_number?: number | null | undefined;
             }[];
             fps?: number | null | undefined;
             legacy_subtitle_id?: number | null | undefined;
             legacy_uploader_id?: number | null | undefined;
-            nb_cd?: number | undefined;
-            slug?: string | undefined;
+            nb_cd?: number | null | undefined;
+            slug?: string | null | undefined;
         };
     }[];
 }, {
@@ -883,37 +1015,37 @@ export declare const SearchResponseSchema: z.ZodObject<{
         attributes: {
             subtitle_id: string;
             language: string | null;
-            download_count?: number | undefined;
-            new_download_count?: number | undefined;
+            download_count?: number | null | undefined;
+            new_download_count?: number | null | undefined;
             hearing_impaired?: boolean | null | undefined;
             hd?: boolean | null | undefined;
             fps?: number | null | undefined;
             votes?: number | null | undefined;
-            points?: number | undefined;
+            points?: number | null | undefined;
             ratings?: number | null | undefined;
             from_trusted?: boolean | null | undefined;
             foreign_parts_only?: boolean | null | undefined;
             ai_translated?: boolean | null | undefined;
             machine_translated?: boolean | null | undefined;
-            upload_date?: string | undefined;
-            release?: string | undefined;
+            upload_date?: string | null | undefined;
+            release?: string | null | undefined;
             comments?: string | null | undefined;
             legacy_subtitle_id?: number | null | undefined;
             legacy_uploader_id?: number | null | undefined;
-            nb_cd?: number | undefined;
-            slug?: string | undefined;
+            nb_cd?: number | null | undefined;
+            slug?: string | null | undefined;
             uploader?: {
                 uploader_id?: number | null | undefined;
-                name?: string | undefined;
-                rank?: string | undefined;
-            } | undefined;
+                name?: string | null | undefined;
+                rank?: string | null | undefined;
+            } | null | undefined;
             feature_details?: {
-                feature_id?: number | undefined;
-                feature_type?: string | undefined;
-                year?: number | undefined;
-                title?: string | undefined;
-                movie_name?: string | undefined;
-                imdb_id?: number | undefined;
+                feature_id?: number | null | undefined;
+                feature_type?: string | null | undefined;
+                year?: number | null | undefined;
+                title?: string | null | undefined;
+                movie_name?: string | null | undefined;
+                imdb_id?: number | null | undefined;
                 tmdb_id?: number | null | undefined;
                 season_number?: number | null | undefined;
                 episode_number?: number | null | undefined;
@@ -921,17 +1053,22 @@ export declare const SearchResponseSchema: z.ZodObject<{
                 parent_title?: string | null | undefined;
                 parent_tmdb_id?: number | null | undefined;
                 parent_feature_id?: number | null | undefined;
-            } | undefined;
-            url?: string | undefined;
-            related_links?: any[] | undefined;
+            } | null | undefined;
+            url?: string | null | undefined;
+            related_links?: any[] | null | undefined;
             files?: {
                 file_id: number;
-                file_name: string;
-                cd_number?: number | undefined;
-            }[] | undefined;
+                file_name?: string | null | undefined;
+                cd_number?: number | null | undefined;
+            }[] | null | undefined;
         };
     }[];
 }>;
+/**
+ * Validate a search response record by record. A record that does not match the
+ * schema is skipped (and counted in the log) instead of failing the whole search.
+ */
+export declare function parseSearchResponse(raw: unknown): SearchResponse;
 export declare const DownloadResponseSchema: z.ZodObject<{
     link: z.ZodString;
     file_name: z.ZodString;

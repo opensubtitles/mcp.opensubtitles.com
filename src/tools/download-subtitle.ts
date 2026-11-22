@@ -34,9 +34,9 @@ export async function downloadSubtitle(args: unknown) {
         const loginResponse = await client.login({ username, password });
         authValue = loginResponse.token;
         isToken = true;
-        console.error(`DEBUG: Successfully logged in user ${username}, got token`);
+        console.error("DEBUG: Login succeeded, got token");
       } catch (loginError) {
-        console.error("DEBUG: Login failed:", loginError);
+        console.error("DEBUG: Login failed:", loginError instanceof Error ? loginError.message : "unknown error");
         // Continue with default API key (authValue will be undefined)
       }
     }
@@ -88,7 +88,7 @@ export async function downloadSubtitle(args: unknown) {
     };
 
   } catch (error) {
-    console.error("Download subtitle error:", error);
+    console.error("Download subtitle error:", error instanceof Error ? error.message : "unknown error");
     
     let errorMessage = "Failed to download subtitle";
     if (error instanceof z.ZodError) {
