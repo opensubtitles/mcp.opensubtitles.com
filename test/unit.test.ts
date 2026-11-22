@@ -10,7 +10,7 @@ import { clientId, registerSecret, scrub } from "../src/log.js";
 import { RateLimiter } from "../src/ratelimit.js";
 import { normTitle, pickExactFeature, rank, releaseSimilarity, toFeatureResult, toSubtitleResult } from "../src/results.js";
 import { traceId, withLegacyJson } from "../src/tools/common.js";
-import { fakeJwt, feature, mockFetch, path, standardRoutes, subtitle } from "./helpers.js";
+import { fake, fakeJwt, feature, mockFetch, path, standardRoutes, subtitle } from "./helpers.js";
 
 const api = (fetch: ReturnType<typeof mockFetch>, creds = {}) =>
   new OpenSubtitlesClient({ apiBase: "https://api.test/api/v1", defaultApiKey: "APPKEY", timeoutMs: 2000, fetch }, creds);
@@ -60,7 +60,7 @@ describe("OpenSubtitlesClient", () => {
   it("logs in once, caches the token, and sends it as Bearer", async () => {
     clearTokenCache();
     const f = mockFetch(standardRoutes());
-    const c = api(f, { username: "synthetic", password: "pw-synthetic-1" });
+    const c = api(f, { username: fake("user"), password: fake("pw") });
     await c.userInfo();
     await c.userInfo();
     expect(f.calls.filter((x) => path("/login")(x))).toHaveLength(1);
@@ -80,7 +80,7 @@ describe("OpenSubtitlesClient", () => {
       },
       ...standardRoutes(),
     ]);
-    const u = await api(f, { username: "synthetic", password: "pw-synthetic-2" }).userInfo();
+    const u = await api(f, { username: fake("user"), password: fake("pw") }).userInfo();
     expect(u.remaining_downloads).toBe(18);
     expect(f.calls.filter((x) => path("/login")(x))).toHaveLength(2);
   });
@@ -91,7 +91,7 @@ describe("OpenSubtitlesClient", () => {
       (c) => (path("/login")(c) ? { body: { token: fakeJwt(Math.floor(Date.now() / 1000) + (n++ === 0 ? 60 : 86400)) } } : undefined),
       ...standardRoutes(),
     ]);
-    const c = api(f, { username: "synthetic", password: "pw-synthetic-3" });
+    const c = api(f, { username: fake("user"), password: fake("pw") });
     await c.userInfo();
     await c.userInfo();
     expect(f.calls.filter((x) => path("/login")(x))).toHaveLength(2);
@@ -118,7 +118,7 @@ describe("OpenSubtitlesClient", () => {
     ] as const) {
       clearTokenCache();
       const f = mk(assigned);
-      const c = new OpenSubtitlesClient({ apiBase: "https://api.opensubtitles.com/api/v1", defaultApiKey: "K", timeoutMs: 2000, fetch: f }, { username: "u-synthetic", password: `p-${assigned}` });
+      const c = new OpenSubtitlesClient({ apiBase: "https://api.opensubtitles.com/api/v1", defaultApiKey: "K", timeoutMs: 2000, fetch: f }, { username: fake("user"), password: fake("pw") });
       await c.userInfo();
       expect(f.calls.find((x) => path("/infos/user")(x))!.url.hostname, assigned).toBe(expected);
     }
@@ -218,8 +218,9 @@ describe("guessit-js integration", () => {
 
 describe("log helpers", () => {
   it("scrubs registered secrets and anonymises client ids", () => {
-    registerSecret("super-secret-value-123");
-    expect(scrub('{"x":"super-secret-value-123"}')).toBe('{"x":"[redacted]"}');
+    const v = fake("value");
+    registerSecret(v);
+    expect(scrub(`{"x":"${v}"}`)).toBe('{"x":"[redacted]"}');
     const id = clientId("salt", "ip:203.0.113.9");
     expect(id).toMatch(/^[0-9a-f]{12}$/);
     expect(id).not.toContain("203");

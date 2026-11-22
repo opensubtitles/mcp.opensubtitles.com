@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Client, InMemoryTransport, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { FetchFn } from "../src/api/client.js";
@@ -156,6 +157,14 @@ export function standardRoutes(extra: Route[] = []): Route[] {
           : { status: 401, body: { errors: ["No token in request"], status: 401 } }
         : undefined,
   ];
+}
+
+/**
+ * A throwaway credential-like value made at runtime, so test files contain no
+ * literal that looks like a password or key (secret scanners flag those).
+ */
+export function fake(label: string): string {
+  return `test-${label}-${randomUUID()}`;
 }
 
 export function fakeJwt(expSeconds = Math.floor(Date.now() / 1000) + 86400): string {

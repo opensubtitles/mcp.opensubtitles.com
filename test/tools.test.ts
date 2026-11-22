@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { setLogSink } from "../src/log.js";
-import { connect, feature, mockFetch, path, standardRoutes, subtitle, type Route } from "./helpers.js";
+import { connect, fake, feature, mockFetch, path, standardRoutes, subtitle, type Route } from "./helpers.js";
 
 type Conn = Awaited<ReturnType<typeof connect>>;
 let conn: Conn | undefined;
@@ -300,7 +300,7 @@ describe("other tools", () => {
     expect(r.isError).toBe(true);
     expect(text(r)).toMatch(/needs a logged-in user/);
     await conn!.close();
-    const r2 = await call("get_user_info", {}, { fetch: f, credentials: { username: "synthetic", password: "pw-synthetic" } });
+    const r2 = await call("get_user_info", {}, { fetch: f, credentials: { username: fake("user"), password: fake("pw") } });
     expect(r2.structuredContent).toMatchObject({ user_id: 42, remaining_downloads: 18, allowed_downloads: 20, vip: false });
   });
 });

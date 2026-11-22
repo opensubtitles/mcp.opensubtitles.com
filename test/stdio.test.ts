@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mockFetch, standardRoutes } from "./helpers.js";
+import { fake, mockFetch, standardRoutes } from "./helpers.js";
 
 /**
  * End-to-end: spawn the built binary (dist/index.js) over stdio, pointed at a
@@ -13,7 +13,7 @@ import { mockFetch, standardRoutes } from "./helpers.js";
  */
 
 const BIN = new URL("../dist/index.js", import.meta.url).pathname;
-const SECRETS = { key: "STDIO-KEY-synthetic-41", user: "stdio-user-synthetic", pass: "STDIO-PASS-synthetic-93" };
+const SECRETS = { key: fake("key"), user: fake("user"), pass: fake("pw") };
 let api: Server;
 let apiBase = "";
 const routes = mockFetch(standardRoutes());

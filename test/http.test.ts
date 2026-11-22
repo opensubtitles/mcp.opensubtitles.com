@@ -5,7 +5,7 @@ import { clearTokenCache } from "../src/api/client.js";
 import { createHttpServer } from "../src/http.js";
 import { setLogSink } from "../src/log.js";
 import { clearLanguageCache } from "../src/tools/misc.js";
-import { mockFetch, path, standardRoutes, testConfig } from "./helpers.js";
+import { fake, mockFetch, path, standardRoutes, testConfig } from "./helpers.js";
 
 /**
  * Raw HTTP tests against the real node:http server (API mocked). Every body is
@@ -191,9 +191,10 @@ describe("credentials from connection headers", () => {
     expect(r.content[0].text).toMatch(/--header "Api-Key: YOUR_KEY"/);
   });
   it("Api-Key header is used for the API call", async () => {
-    const r = JSON.parse((await post(dl, { ...H, "Api-Key": "HDRKEY-synthetic" })).raw).result;
+    const hdrKey = fake("key");
+    const r = JSON.parse((await post(dl, { ...H, "Api-Key": hdrKey })).raw).result;
     expect(r.isError).toBeFalsy();
-    expect(api.calls.find((c) => path("/download")(c))!.headers["api-key"]).toBe("HDRKEY-synthetic");
+    expect(api.calls.find((c) => path("/download")(c))!.headers["api-key"]).toBe(hdrKey);
   });
   it("X-OpenSubtitles-Token is forwarded as Bearer to the REST API", async () => {
     const jwt = "aaa.bbb.ccc";
@@ -201,14 +202,15 @@ describe("credentials from connection headers", () => {
     expect(api.calls.find((c) => path("/download")(c))!.headers.authorization).toBe(`Bearer ${jwt}`);
   });
   it("username/password headers log in once and reuse the token", async () => {
-    const h = { ...H, "Api-Key": "K-synthetic", "X-OpenSubtitles-Username": "synthetic", "X-OpenSubtitles-Password": "pw-hdr-synthetic" };
+    const h = { ...H, "Api-Key": "K-synthetic", "X-OpenSubtitles-Username": fake("user"), "X-OpenSubtitles-Password": fake("pw") };
     await post(dl, h);
     await post(dl, h);
     expect(api.calls.filter((c) => path("/login")(c))).toHaveLength(1);
   });
   it("legacy Authorization: Bearer still works (JWT = token, otherwise API key)", async () => {
-    await post(dl, { ...H, Authorization: "Bearer LEGACYKEY-synthetic" });
-    expect(api.calls.find((c) => path("/download")(c))!.headers["api-key"]).toBe("LEGACYKEY-synthetic");
+    const legacyKey = fake("key");
+    await post(dl, { ...H, Authorization: `Bearer ${legacyKey}` });
+    expect(api.calls.find((c) => path("/download")(c))!.headers["api-key"]).toBe(legacyKey);
   });
 });
 
@@ -277,7 +279,7 @@ describe("rate limiting", () => {
 describe("logs", () => {
   it("contain no credentials, arguments or headers, even when secrets are sent", async () => {
     logs.length = 0;
-    const secrets = ["SECRET-APIKEY-synthetic-9f2", "SECRET-PASSWORD-synthetic-7c1", "SECRET.TOKEN.synthetic", "synthetic-username-x8"];
+    const secrets = [fake("key"), fake("pw"), `${fake("a")}.${fake("b")}.${fake("c")}`, fake("user")];
     const h = {
       "MCP-Protocol-Version": "2025-06-18",
       "Api-Key": secrets[0]!,

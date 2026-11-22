@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { connect, mockFetch, standardRoutes } from "./helpers.js";
+import { connect, fake, mockFetch, standardRoutes } from "./helpers.js";
 
 const CREDENTIAL = /pass(word)?|token|api[-_]?key|secret|auth|credential|user(name)?|login|jwt|bearer/i;
 
@@ -31,13 +31,14 @@ describe("no credentials in tool inputs", () => {
     });
   }
   it("rejects extra credential arguments (1.x style) instead of using them", async () => {
+    const marker = fake("key");
     const api = mockFetch(standardRoutes());
     const c = await connect({ fetch: api });
-    const r = await c.client.callTool({ name: "download_subtitle", arguments: { file_id: 30, user_api_key: "X-synthetic", username: "u", password: "p" } });
+    const r = await c.client.callTool({ name: "download_subtitle", arguments: { file_id: 30, user_api_key: marker, username: fake("user"), password: fake("pw") } });
     await c.close();
     // Unknown keys are ignored by the schema and never reach the API.
     for (const call of api.calls) {
-      expect(JSON.stringify(call)).not.toContain("X-synthetic");
+      expect(JSON.stringify(call)).not.toContain(marker);
     }
     expect(r).toBeTruthy();
   });
